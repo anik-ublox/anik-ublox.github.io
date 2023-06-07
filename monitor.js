@@ -906,34 +906,34 @@ function dbOnPublish(el) {
         }
     }
     
-    function _makeTable(stats) {
-        let dump = '';
-        dump += '<tr style="border-top-width:0;"><td colspan="2" style="padding-top:1em;"><b>Statistics<b></td></tr>';
-        if (undefined !== stats.cur) dump += '<tr><td>Latest</td><td class="right">' + stats.cur + '</td></tr>';
-        if (undefined !== stats.min) dump += '<tr><td>Minimum</td><td class="right">' + stats.min + '</td></tr>';
-        if (undefined !== stats.max) dump += '<tr><td>Maximum</td><td class="right">' + stats.max + '</td></tr>';
-        if (undefined !== stats.avg) dump += '<tr><td>Average</td><td class="right">' + stats.avg + '</td></tr>';
-        if (undefined !== stats.dev) dump += '<tr><td title="Standard Deviation">Std. Dev.</td><td class="right">' + stats.dev + '</td></tr>';
-        dump += '<tr><td>Count</td><td class="right">' + stats.cnt + '</td></tr>';
-    //    if (stat.unit)   dump += '<tr><td>Unit</td><td class="right">'+stats.unit+'</td></tr>';
-        dump += '<tr><td colspan="2" style="padding-top:1em;"><b>Source</b></td></tr>';
-        if (undefined !== stats.msg) {
-            let m = stats.msg.match(/^(\w+)\s+(.*)/);
-            if (m != undefined && m.length == 3) {
-                dump += '<tr><td>Protocol</td><td class="right">' + m[1] + '</td></tr>';
-                dump += '<tr><td>Message</td><td class="right">' + m[2] + '</td></tr>';
-            }
-        }
-        if (undefined != stats.time) dump += '<tr><td>Time</td><td class="right">' + stats.time + '</td></tr>';
-        if (undefined !== stats.age) {
-            const age = (stats.age > 1) ? stats.age + '  s Ago' : (stats.age === 1) ? 'Last Epoch' : 'Just Now';
-            dump += '<tr><td>Updated</td><td class="right">' + age + '</td></tr>';
-        }
-        let table = document.createElement('table');
-        table.className = "dbtable";
-        table.innerHTML = dump;
-        return table;
-    }
+    // function _makeTable(stats) {
+    //     let dump = '';
+    //     dump += '<tr style="border-top-width:0;"><td colspan="2" style="padding-top:1em;"><b>Statistics<b></td></tr>';
+    //     if (undefined !== stats.cur) dump += '<tr><td>Latest</td><td class="right">' + stats.cur + '</td></tr>';
+    //     if (undefined !== stats.min) dump += '<tr><td>Minimum</td><td class="right">' + stats.min + '</td></tr>';
+    //     if (undefined !== stats.max) dump += '<tr><td>Maximum</td><td class="right">' + stats.max + '</td></tr>';
+    //     if (undefined !== stats.avg) dump += '<tr><td>Average</td><td class="right">' + stats.avg + '</td></tr>';
+    //     if (undefined !== stats.dev) dump += '<tr><td title="Standard Deviation">Std. Dev.</td><td class="right">' + stats.dev + '</td></tr>';
+    //     dump += '<tr><td>Count</td><td class="right">' + stats.cnt + '</td></tr>';
+    // //    if (stat.unit)   dump += '<tr><td>Unit</td><td class="right">'+stats.unit+'</td></tr>';
+    //     dump += '<tr><td colspan="2" style="padding-top:1em;"><b>Source</b></td></tr>';
+    //     if (undefined !== stats.msg) {
+    //         let m = stats.msg.match(/^(\w+)\s+(.*)/);
+    //         if (m != undefined && m.length == 3) {
+    //             dump += '<tr><td>Protocol</td><td class="right">' + m[1] + '</td></tr>';
+    //             dump += '<tr><td>Message</td><td class="right">' + m[2] + '</td></tr>';
+    //         }
+    //     }
+    //     if (undefined != stats.time) dump += '<tr><td>Time</td><td class="right">' + stats.time + '</td></tr>';
+    //     if (undefined !== stats.age) {
+    //         const age = (stats.age > 1) ? stats.age + '  s Ago' : (stats.age === 1) ? 'Last Epoch' : 'Just Now';
+    //         dump += '<tr><td>Updated</td><td class="right">' + age + '</td></tr>';
+    //     }
+    //     let table = document.createElement('table');
+    //     table.className = "dbtable";
+    //     table.innerHTML = dump;
+    //     return table;
+    // }
     
     // function _makeChart(e, width) {
     //     if (e.cat || (0<=e.prec)) {
