@@ -807,18 +807,18 @@ function dbSaveKml(e) {
     tempLink.click();
 }
 
-// function dbClear(e) {
-//     if (e) e.preventDefault();
-//     epoch.ids = {};
-//     epoch.data = '';
-//     epoch.numMsg = 0;
-//     epoch.index = 0;
-//     for (let name in db)
-//         db[name].clear();
-//     for (let name in dbInt)
-//         dbInt[name].clear();
-//     clearMapTrack(e);
-// }
+function dbClear(e) {
+    if (e) e.preventDefault();
+    epoch.ids = {};
+    epoch.data = '';
+    epoch.numMsg = 0;
+    epoch.index = 0;
+    for (let name in db)
+        db[name].clear();
+    for (let name in dbInt)
+        dbInt[name].clear();
+    clearMapTrack(e);
+}
 
 // function dbOnClear() {
 //     // detach the gui
@@ -995,35 +995,35 @@ function dbSaveKml(e) {
 //     }
 // }
         
-// function dbPublish() {
-//     // now publish to the gui
-//     if (db.long.dirty && db.lat.dirty)
-//         centerMap(db.long.val, db.lat.val, db.cogt.val, db.gSpeed.val, db.hAcc.val,
-//                   (db.plPosValid.val ? { major:db.plPos1.val, minor:db.plPos2.val, vert:db.plPos3.val, angle:db.plPosHorOr.val } : undefined),
-//                   (db.plVelValid.val ? { major:db.plVel1.val, minor:db.plVel2.val, vert:db.plVel3.val, angle:db.plVelHorOr.val } : undefined) );
-//     if (nmeaSvDb.dirty) {
-//         nmeaSvDb.dirty = false;
-//         // Merge the new values with the old ones avoid flickering, every epoch we will replace the old with new
-//         Object.assign(oldSvDb, nmeaSvDb);
-//         chartSvs(oldSvDb);
-//         tableSvs(oldSvDb);
-//     }
-//     // show the Tiles
-//     let el = document.getElementById('db');
-//     for (let name in db) {
-//         const e = db[name];
-//         e.publish(el)
-//         if (e.el) el = e.el.info ? e.el.info : e.el.row;
-//     }
-//     el = document.getElementById('tile_position');
-//     if (el) {
-//         el.removeAttribute('hidden');
-//     }
-//     if (nmeaSvDb.freqs > 0) {
-//         el = document.getElementById('tile_satellite');
-//         if (el) el.removeAttribute('hidden');
-//     }
-// }
+function dbPublish() {
+    // now publish to the gui
+    if (db.long.dirty && db.lat.dirty)
+        centerMap(db.long.val, db.lat.val, db.cogt.val, db.gSpeed.val, db.hAcc.val,
+                  (db.plPosValid.val ? { major:db.plPos1.val, minor:db.plPos2.val, vert:db.plPos3.val, angle:db.plPosHorOr.val } : undefined),
+                  (db.plVelValid.val ? { major:db.plVel1.val, minor:db.plVel2.val, vert:db.plVel3.val, angle:db.plVelHorOr.val } : undefined) );
+    if (nmeaSvDb.dirty) {
+        nmeaSvDb.dirty = false;
+        // Merge the new values with the old ones avoid flickering, every epoch we will replace the old with new
+        Object.assign(oldSvDb, nmeaSvDb);
+        chartSvs(oldSvDb);
+        tableSvs(oldSvDb);
+    }
+    // show the Tiles
+    let el = document.getElementById('db');
+    for (let name in db) {
+        const e = db[name];
+        e.publish(el)
+        if (e.el) el = e.el.info ? e.el.info : e.el.row;
+    }
+    el = document.getElementById('tile_position');
+    if (el) {
+        el.removeAttribute('hidden');
+    }
+    if (nmeaSvDb.freqs > 0) {
+        el = document.getElementById('tile_satellite');
+        if (el) el.removeAttribute('hidden');
+    }
+}
 
 function updateStatus( message ) {
     // update internal counters
