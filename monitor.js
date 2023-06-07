@@ -1025,1052 +1025,1052 @@ function dbSaveKml(e) {
 //     }
 // }
 
-// function updateStatus( message ) {
-//     // update internal counters
-//     if (message.type === 'input') {
-//         intStats.bytesTx += message.data.length;
-//         intStats.msgTx ++;
-//     }
-//     if (message.type === 'output') {
-//         intStats.bytesRx += message.data.length;
-//         intStats.bytesPend = 0;
-//         intStats.msgRx ++;
-//     }
-//     if (message.type === 'pending')
-//         intStats.bytesPend = message.data.length;
+function updateStatus( message ) {
+    // update internal counters
+    if (message.type === 'input') {
+        intStats.bytesTx += message.data.length;
+        intStats.msgTx ++;
+    }
+    if (message.type === 'output') {
+        intStats.bytesRx += message.data.length;
+        intStats.bytesPend = 0;
+        intStats.msgRx ++;
+    }
+    if (message.type === 'pending')
+        intStats.bytesPend = message.data.length;
         
-//     const fields = message.fields;
-//     if ((message.type === 'output') && message.protocol.match(/^NMEA|UBX$/) && fields) {
-//         let newEpoch = false;
-//         if (db.time.sta && fields) {
-//             if (undefined !== fields.time) {
-//                 const oldTime = db.time.value();
-//                 newEpoch = fields.time !== oldTime;
-// /*REMOVE*/      //if (newEpoch) console.log('epoch by TIME ' + oldTime + ' ' + fields.time + ' of ' + message.id);
-//             } else if (undefined !== fields.itow) {
-//                 let tod = (fields.itow - LEAP_SECONDS) % 86400;
-//                 const h = Math.floor(tod / 3600);
-//                 tod = (tod - (h * 3600));
-//                 const m = Math.floor(tod / 60);
-//                 const s = tod - (m * 60);
-//                 const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
-//                 const oldTime = db.time.value();
-//                 newEpoch = time !== oldTime;
-// /*REMOVE*/      //if (newEpoch) console.log('epoch by ITOW ' + oldTime + ' ' + time + ' of ' + message.id);
-//             }
-//         }
-//         if (!newEpoch) {
-//             const id = message.id;
-//             newEpoch = epoch.ids[id] && (id === 'RMC' || id === 'VTG' || id === 'GGA' || id === 'GNS');
-// /*REMOVE*/  //if (newEpoch) console.log('epoch by ' + message.id);
-//         }
-//         if (newEpoch) {
-//             if (epoch.numMsg) 
-// 				dbPublish();
-//             // reset for next epoch here
-//             epoch.ids = {};
-//             epoch.data = '';
-//             epoch.numMsg = 0;
-//             epoch.index ++;
-//             oldSvDb = nmeaSvDb; // take a copy 
-//             nmeaSvUsed = [];
-//             nmeaSvDb = { freqs:0 };
-//             nmeaSvDb.dirty = true;
-//             for (let name in db)
-//                 db[name].update();
-//         }
-//         // append it to current epoch
-//         epoch.data += message.data;
-//         epoch.ids[message.id] = (epoch.ids[message.id]|0) + 1;
-//         epoch.numMsg ++;
-//         db.epIndex.set(epoch.index);
-//         db.epNumMsg.set(epoch.numMsg);
-//         db.epBytes.set(epoch.data.length);
-//         // add the new values to the (new) epoch
-//         for(let name in fields)
-//             if(db[name]) db[name].set(fields[name], message);
-//         // some conversions to correct units (most recent wins) set always
-//         if ((undefined !== fields.longN) && (undefined !== fields.longI) && (0 === db.long.sta))
-//             db.long.set((fields.longI === 'W') ? -fields.longN : fields.longN, message);
-//         if ((undefined !== fields.latN) && (undefined !== fields.latI) && (0 === db.lat.sta))
-//             db.lat.set((fields.latI === 'S') ? -fields.latN : fields.latN, message);
-//         if (0 === db.gSpeed.sta) {
-//             if (undefined !== fields.spdKm)
-//                 db.gSpeed.set(0.06 * fields.spdKm. message);
-//             else if (undefined !== fields.spdKn)
-//                 db.gSpeed.set(0.11112 * fields.spdKn. message);
-//         }
-//         // complete from other fields
-//         if (undefined !== fields.sep) {
-//             if (undefined !== fields.msl)
-//                 db.height.set(fields.msl + fields.sep, message);
-//             else if (undefined !== fields.height)
-//                 db.msl.set(fields.height - fields.sep, message);
-//         } else if ((undefined !== fields.height) && (undefined !== fields.msl))
-//             db.sep.set(fields.height - fields.msl, message);
-//         if (undefined !== fields.itow) {
-//             let tod = (fields.itow - 18) % 86400;
-//             const h = Math.floor(tod / 3600);
-//             tod = (tod - (h * 3600));
-//             const m = Math.floor(tod / 60);
-//             const s = tod - (m * 60);
-//             const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
-//             db.time.set(time, message);
-//         }
-//         /*
-// 		if ((undefined !== fields.ecefX) && (undefined !== fields.ecefY)){
-// 			if (0 === db.long.sta) {
-// 				db.long.set(Math.atan2(fields.ecefY, fields.ecefX), message);
-// 			} 
-// 			if ((undefined !== fields.ecefZ) && (0 === db.lat.sta)){
-// 				const F		= 0.00335281066474748;//(1/298.2572235630);
-// 				const A		= 6378137.0;
-// 				const B		= 6356752.31424518;//(A * (1-F));
-// 				const E1SQR	= 0.00669437999014132;//((A*A - B*B) / (A*A));
-// 				const E2SQR	= 0.00673949674227643;//((A*A - B*B) / (B*B));
-// 				const E2SQR_B = 42841.31151331360000000;// E2SQR * B;
-// 				const E1SQR_A = 42697.67270718000000000;// E1SQR * A;
-// 				const p = Math.sqrt(fields.ecefX * fields.ecefX + fields.ecefY * fields.ecefY);
-// 				const T = Math.atan2(fields.ecefZ * A, p * B);
-// 				const sinT = Math.sin(T);
-// 				const cosT = Math.cos(T);
-// 				double dLat = Math.atan2(Z + E2SQR_B * sinT * sinT * sinT, p - E1SQR_A * cosT * cosT * cosT);
-// 				db.lat.set(dLat);
-// 			}
-// 			if ((undefined !== fields.height) && (0 === db.lat.sta)){
+    const fields = message.fields;
+    if ((message.type === 'output') && message.protocol.match(/^NMEA|UBX$/) && fields) {
+        let newEpoch = false;
+        if (db.time.sta && fields) {
+            if (undefined !== fields.time) {
+                const oldTime = db.time.value();
+                newEpoch = fields.time !== oldTime;
+/*REMOVE*/      //if (newEpoch) console.log('epoch by TIME ' + oldTime + ' ' + fields.time + ' of ' + message.id);
+            } else if (undefined !== fields.itow) {
+                let tod = (fields.itow - LEAP_SECONDS) % 86400;
+                const h = Math.floor(tod / 3600);
+                tod = (tod - (h * 3600));
+                const m = Math.floor(tod / 60);
+                const s = tod - (m * 60);
+                const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
+                const oldTime = db.time.value();
+                newEpoch = time !== oldTime;
+/*REMOVE*/      //if (newEpoch) console.log('epoch by ITOW ' + oldTime + ' ' + time + ' of ' + message.id);
+            }
+        }
+        if (!newEpoch) {
+            const id = message.id;
+            newEpoch = epoch.ids[id] && (id === 'RMC' || id === 'VTG' || id === 'GGA' || id === 'GNS');
+/*REMOVE*/  //if (newEpoch) console.log('epoch by ' + message.id);
+        }
+        if (newEpoch) {
+            if (epoch.numMsg) 
+				dbPublish();
+            // reset for next epoch here
+            epoch.ids = {};
+            epoch.data = '';
+            epoch.numMsg = 0;
+            epoch.index ++;
+            oldSvDb = nmeaSvDb; // take a copy 
+            nmeaSvUsed = [];
+            nmeaSvDb = { freqs:0 };
+            nmeaSvDb.dirty = true;
+            for (let name in db)
+                db[name].update();
+        }
+        // append it to current epoch
+        epoch.data += message.data;
+        epoch.ids[message.id] = (epoch.ids[message.id]|0) + 1;
+        epoch.numMsg ++;
+        db.epIndex.set(epoch.index);
+        db.epNumMsg.set(epoch.numMsg);
+        db.epBytes.set(epoch.data.length);
+        // add the new values to the (new) epoch
+        for(let name in fields)
+            if(db[name]) db[name].set(fields[name], message);
+        // some conversions to correct units (most recent wins) set always
+        if ((undefined !== fields.longN) && (undefined !== fields.longI) && (0 === db.long.sta))
+            db.long.set((fields.longI === 'W') ? -fields.longN : fields.longN, message);
+        if ((undefined !== fields.latN) && (undefined !== fields.latI) && (0 === db.lat.sta))
+            db.lat.set((fields.latI === 'S') ? -fields.latN : fields.latN, message);
+        if (0 === db.gSpeed.sta) {
+            if (undefined !== fields.spdKm)
+                db.gSpeed.set(0.06 * fields.spdKm. message);
+            else if (undefined !== fields.spdKn)
+                db.gSpeed.set(0.11112 * fields.spdKn. message);
+        }
+        // complete from other fields
+        if (undefined !== fields.sep) {
+            if (undefined !== fields.msl)
+                db.height.set(fields.msl + fields.sep, message);
+            else if (undefined !== fields.height)
+                db.msl.set(fields.height - fields.sep, message);
+        } else if ((undefined !== fields.height) && (undefined !== fields.msl))
+            db.sep.set(fields.height - fields.msl, message);
+        if (undefined !== fields.itow) {
+            let tod = (fields.itow - 18) % 86400;
+            const h = Math.floor(tod / 3600);
+            tod = (tod - (h * 3600));
+            const m = Math.floor(tod / 60);
+            const s = tod - (m * 60);
+            const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
+            db.time.set(time, message);
+        }
+        /*
+		if ((undefined !== fields.ecefX) && (undefined !== fields.ecefY)){
+			if (0 === db.long.sta) {
+				db.long.set(Math.atan2(fields.ecefY, fields.ecefX), message);
+			} 
+			if ((undefined !== fields.ecefZ) && (0 === db.lat.sta)){
+				const F		= 0.00335281066474748;//(1/298.2572235630);
+				const A		= 6378137.0;
+				const B		= 6356752.31424518;//(A * (1-F));
+				const E1SQR	= 0.00669437999014132;//((A*A - B*B) / (A*A));
+				const E2SQR	= 0.00673949674227643;//((A*A - B*B) / (B*B));
+				const E2SQR_B = 42841.31151331360000000;// E2SQR * B;
+				const E1SQR_A = 42697.67270718000000000;// E1SQR * A;
+				const p = Math.sqrt(fields.ecefX * fields.ecefX + fields.ecefY * fields.ecefY);
+				const T = Math.atan2(fields.ecefZ * A, p * B);
+				const sinT = Math.sin(T);
+				const cosT = Math.cos(T);
+				double dLat = Math.atan2(Z + E2SQR_B * sinT * sinT * sinT, p - E1SQR_A * cosT * cosT * cosT);
+				db.lat.set(dLat);
+			}
+			if ((undefined !== fields.height) && (0 === db.lat.sta)){
 				
-// 			}
-// 		}
-// 		*/
+			}
+		}
+		*/
 			
-// /*		// XYZ -> Lat/LOn/ALT
-// 		onst double Pi		= 3.1415926535898;		// WGS 84 value of pi
-// const double F		= (1/298.2572235630);
-// const double A		= 6378137.0;
-// const double B		= (A * (1-F));
-// const double E1SQR	= ((A*A - B*B) / (A*A));
-// const double E2SQR	= ((A*A - B*B) / (B*B));
+/*		// XYZ -> Lat/LOn/ALT
+		onst double Pi		= 3.1415926535898;		// WGS 84 value of pi
+const double F		= (1/298.2572235630);
+const double A		= 6378137.0;
+const double B		= (A * (1-F));
+const double E1SQR	= ((A*A - B*B) / (A*A));
+const double E2SQR	= ((A*A - B*B) / (B*B));
 
-// const double RADIANS_PER_DEGREE = (Pi / 180.0);							//!< Radians per degree
-// const double DEGREES_PER_RADIAN	= (180.0 / Pi);							//!< Degrees per radian
-// const double ARCSECONDS_PER_RADIAN	= (DEGREES_PER_RADIAN * 3600.0);	//!< Arc seconds per radian
-// const double RADIANS_PER_ARCSECOND = (RADIANS_PER_DEGREE / 3600);		//!< Radians per arc second
+const double RADIANS_PER_DEGREE = (Pi / 180.0);							//!< Radians per degree
+const double DEGREES_PER_RADIAN	= (180.0 / Pi);							//!< Degrees per radian
+const double ARCSECONDS_PER_RADIAN	= (DEGREES_PER_RADIAN * 3600.0);	//!< Arc seconds per radian
+const double RADIANS_PER_ARCSECOND = (RADIANS_PER_DEGREE / 3600);		//!< Radians per arc second
 
-// const double METERS_PER_NAUTICAL_MILE	= (1853.32055);
-// const double LAT_METERS_PER_DEGREE		= (METERS_PER_NAUTICAL_MILE * 60.0);
-// const double KNOTS_PER_METER			= (0.3048 * 6076.0);
+const double METERS_PER_NAUTICAL_MILE	= (1853.32055);
+const double LAT_METERS_PER_DEGREE		= (METERS_PER_NAUTICAL_MILE * 60.0);
+const double KNOTS_PER_METER			= (0.3048 * 6076.0);
 
-// const double C_SOL	= 299792458.0;
+const double C_SOL	= 299792458.0;
 
-// double X = m_pStorageX->GetValue();
+double X = m_pStorageX->GetValue();
 		
-// 			// Set Altitude if needed
-// 			if (m_pStorageAlt && m_pStorageAlt->IsUndefined())
-// 			{
-// 				// handle the poles
-// 				if (p == 0.0)
-// 					bUpdated |= m_pStorageAlt->EstValue(fabs(Z) - B);
-// 				else
-// 				{
-// 					double sinF = sin(dLat);
-// 					double cosF = cos(dLat);
-// 					double N =  A*A / sqrt(A*A * cosF*cosF + B*B * sinF*sinF);
-// 					bUpdated |= m_pStorageAlt->EstValue(p / cosF - N);
-// 				}
-// 			}
+			// Set Altitude if needed
+			if (m_pStorageAlt && m_pStorageAlt->IsUndefined())
+			{
+				// handle the poles
+				if (p == 0.0)
+					bUpdated |= m_pStorageAlt->EstValue(fabs(Z) - B);
+				else
+				{
+					double sinF = sin(dLat);
+					double cosF = cos(dLat);
+					double N =  A*A / sqrt(A*A * cosF*cosF + B*B * sinF*sinF);
+					bUpdated |= m_pStorageAlt->EstValue(p / cosF - N);
+				}
+			}
 			
-// 		if (m_pStorageLat && m_pStorageLat->IsDefined() && 
-// 		m_pStorageAlt && m_pStorageAlt->IsDefined())
-// 		{
-// 			double dLat = m_pStorageLat->GetValue();
-// 			double dAlt = m_pStorageAlt->GetValue();
-// 			double sinF = sin(dLat);
-// 			double cosF = cos(dLat);
-// 			double N =  (A * A) / sqrt(A * A * cosF * cosF + B * B * sinF * sinF);
-// 			// Set Z if Needed
-// 			if (m_pStorageZ && m_pStorageZ->IsUndefined())
-// 				bUpdated |= m_pStorageZ->EstValue(((B * B) / (A * A) * N + dAlt) * sinF);
-// 			if (m_pStorageLon && m_pStorageLon->IsDefined())
-// 			{
-// 				double dLon = m_pStorageLon->GetValue();
-// 				// Set X if Needed
-// 				if (m_pStorageX && m_pStorageX->IsUndefined())
-// 					bUpdated |= m_pStorageX->EstValue((N + dAlt) * cosF * cos(dLon));
-// 				// Set Y if Needed
-// 				if (m_pStorageY && m_pStorageY->IsUndefined())
-// 					bUpdated |= m_pStorageY->EstValue((N + dAlt) * cosF * sin(dLon));
-// 			}
-// 		}
-// 		if (m_pStorageX && m_pStorageX->IsDefined() && 
-// 		m_pStorageY && m_pStorageY->IsDefined() && 
-// 		m_pStorageLong && m_pStorageLong->IsDefined())
-// 	{
+		if (m_pStorageLat && m_pStorageLat->IsDefined() && 
+		m_pStorageAlt && m_pStorageAlt->IsDefined())
+		{
+			double dLat = m_pStorageLat->GetValue();
+			double dAlt = m_pStorageAlt->GetValue();
+			double sinF = sin(dLat);
+			double cosF = cos(dLat);
+			double N =  (A * A) / sqrt(A * A * cosF * cosF + B * B * sinF * sinF);
+			// Set Z if Needed
+			if (m_pStorageZ && m_pStorageZ->IsUndefined())
+				bUpdated |= m_pStorageZ->EstValue(((B * B) / (A * A) * N + dAlt) * sinF);
+			if (m_pStorageLon && m_pStorageLon->IsDefined())
+			{
+				double dLon = m_pStorageLon->GetValue();
+				// Set X if Needed
+				if (m_pStorageX && m_pStorageX->IsUndefined())
+					bUpdated |= m_pStorageX->EstValue((N + dAlt) * cosF * cos(dLon));
+				// Set Y if Needed
+				if (m_pStorageY && m_pStorageY->IsUndefined())
+					bUpdated |= m_pStorageY->EstValue((N + dAlt) * cosF * sin(dLon));
+			}
+		}
+		if (m_pStorageX && m_pStorageX->IsDefined() && 
+		m_pStorageY && m_pStorageY->IsDefined() && 
+		m_pStorageLong && m_pStorageLong->IsDefined())
+	{
 		
-// 	VXYZ -> VNED
-// 		double X = m_pStorageX->GetValue();
-// 		double Y = m_pStorageY->GetValue();
-// 		double Long = m_pStorageLong->GetValue();
-// 		double sinL = sin(Long);
-// 		double cosL = cos(Long);
-// 		if (m_pStorageEast && m_pStorageEast->IsUndefined())
-// 			bUpdated |= m_pStorageEast->EstValue(- X * sinL + Y * cosL);
-// 		if (m_pStorageZ && m_pStorageZ->IsDefined() && 
-// 			m_pStorageLat && m_pStorageLat->IsDefined())
-// 		{
-// 			double Z = m_pStorageZ->GetValue();
-// 			double Lat = m_pStorageLat->GetValue();
-// 			double sinF = sin(Lat);
-// 			double cosF = cos(Lat);
-// 			if (m_pStorageNorth && m_pStorageNorth->IsUndefined()) 
-// 				bUpdated |= m_pStorageNorth->EstValue(- X * sinF * cosL - Y * sinF * sinL + Z * cosF);
-// 			if (m_pStorageDown && m_pStorageDown->IsUndefined()) 
-// 				bUpdated |= m_pStorageDown->EstValue(- X * cosF * cosL - Y * cosF * sinL - Z * sinF);
-// 		}
-// 	}
+	VXYZ -> VNED
+		double X = m_pStorageX->GetValue();
+		double Y = m_pStorageY->GetValue();
+		double Long = m_pStorageLong->GetValue();
+		double sinL = sin(Long);
+		double cosL = cos(Long);
+		if (m_pStorageEast && m_pStorageEast->IsUndefined())
+			bUpdated |= m_pStorageEast->EstValue(- X * sinL + Y * cosL);
+		if (m_pStorageZ && m_pStorageZ->IsDefined() && 
+			m_pStorageLat && m_pStorageLat->IsDefined())
+		{
+			double Z = m_pStorageZ->GetValue();
+			double Lat = m_pStorageLat->GetValue();
+			double sinF = sin(Lat);
+			double cosF = cos(Lat);
+			if (m_pStorageNorth && m_pStorageNorth->IsUndefined()) 
+				bUpdated |= m_pStorageNorth->EstValue(- X * sinF * cosL - Y * sinF * sinL + Z * cosF);
+			if (m_pStorageDown && m_pStorageDown->IsUndefined()) 
+				bUpdated |= m_pStorageDown->EstValue(- X * cosF * cosL - Y * cosF * sinL - Z * sinF);
+		}
+	}
 		
-// 	if (m_pStorageNorth && m_pStorageNorth->IsDefined() && 
-// 		m_pStorageDown && m_pStorageDown->IsDefined() && 
-// 		m_pStorageLat && m_pStorageLat->IsDefined())
-// 	{
-// 		double North = m_pStorageNorth->GetValue();
-// 		double Down = m_pStorageDown->GetValue();
-// 		double Lat = m_pStorageLat->GetValue();
-// 		double sinF = sin(Lat);
-// 		double cosF = cos(Lat);
-// 		if (m_pStorageZ && m_pStorageZ->IsUndefined())
-// 			bUpdated |= m_pStorageZ->EstValue(cosF * North - sinF * Down);
-// 		if (m_pStorageEast && m_pStorageEast->IsDefined() && 
-// 			m_pStorageLong && m_pStorageLong->IsDefined())
-// 		{
-// 			double East = m_pStorageEast->GetValue();
-// 			double Long = m_pStorageLong->GetValue();
-// 			double sinL = sin(Long);
-// 			double cosL = cos(Long);
-// 			if (m_pStorageX && m_pStorageX->IsUndefined()) 
-// 				bUpdated |= m_pStorageX->EstValue(- sinL * East  - cosL * sinF * North - cosL * cosF * Down);
-// 			if (m_pStorageY && m_pStorageY->IsUndefined()) 
-// 				bUpdated |= m_pStorageY->EstValue(cosL * East  - sinL * sinF * North - cosF * sinL * Down);
-// 		}
-// 	}
-// 	*/
+	if (m_pStorageNorth && m_pStorageNorth->IsDefined() && 
+		m_pStorageDown && m_pStorageDown->IsDefined() && 
+		m_pStorageLat && m_pStorageLat->IsDefined())
+	{
+		double North = m_pStorageNorth->GetValue();
+		double Down = m_pStorageDown->GetValue();
+		double Lat = m_pStorageLat->GetValue();
+		double sinF = sin(Lat);
+		double cosF = cos(Lat);
+		if (m_pStorageZ && m_pStorageZ->IsUndefined())
+			bUpdated |= m_pStorageZ->EstValue(cosF * North - sinF * Down);
+		if (m_pStorageEast && m_pStorageEast->IsDefined() && 
+			m_pStorageLong && m_pStorageLong->IsDefined())
+		{
+			double East = m_pStorageEast->GetValue();
+			double Long = m_pStorageLong->GetValue();
+			double sinL = sin(Long);
+			double cosL = cos(Long);
+			if (m_pStorageX && m_pStorageX->IsUndefined()) 
+				bUpdated |= m_pStorageX->EstValue(- sinL * East  - cosL * sinF * North - cosL * cosF * Down);
+			if (m_pStorageY && m_pStorageY->IsUndefined()) 
+				bUpdated |= m_pStorageY->EstValue(cosL * East  - sinL * sinF * North - cosF * sinL * Down);
+		}
+	}
+	*/
 	
-//         // special extractions from messages
-//         if (message.protocol === 'UBX') {
-//             if (message.name === 'MON-VER') {
-// 				USTART.tableEntry('dev_tech', /*'\uE003'+*/
-// 						'<a target="_blank" href="https://www.u-blox.com/en/positioning-chips-and-modules">Positioning</a>', true);
-//                 infTextExtract(fields.swVer);
-//                 tableEntry('dev_hw', fields.hwVer);
-//                 if (fields.extVer) {
-//                     for (let i = 0; i < fields.extVer.length; i ++)
-//                         infTextExtract(fields.extVer[i]);
-//                 }
-//             } else if (message.name === 'INF-NOTICE') {
-//                 infTextExtract(fields.infTxt);
-//             } else if (message.name === 'MON-PMP') {
-//                 for (let i = 0; i <fields.entries; i ++) {
-//                     let freq = fields.entry[i].centerFreq;
-//                     const cn0 = fields.entry[i].cn0 + fields.entry[0].cn0Frac;
-//                     if (cn0 > 0) {
-//                         db.lBcn0.set(cn0);
-//                     }
-//                     const sys = 'PointPerfect';
-//                     let sig = 'LBAND';
-//                     if (0 < freq) sig += ' ' + (freq*1e-6).toFixed(2);
-//                     let id = gnssLut[sys].ch;
-//                     const keys = Object.keys(gnssLut[sys].freq);
-//                     keys.forEach( function Check(key) {
-//                         if (Math.abs(freq - gnssLut[sys].freq[key]) < 100000) {
-//                             id = gnssLut[sys].ch + key;
-//                         }
-//                     } );
-//                     if (undefined !== id) {
-//                         nmeaSvsSet(sys, id, sig, cn0)
-//                         nmeaSvDb.dirty = true;
-//                     }
-//                 }   
-//             } else if (message.name === 'RXM-QZSSL6') {
-//                 const sys = 'QZSS';
-//                 const sig = 'L6';
-//                 const id = gnssLut[sys].ch + fields.svId;
-//                 nmeaSvsSet(sys, id, sig, fields.cno);
-//                 nmeaSvDb.dirty = true;
-//             } else if (message.name === 'RXM-PMP') {
-//                 if (fields.ebn0 > 0)
-//                     db.lBebn0.set(fields.ebn0);
-//                 nmeaSvDb.dirty = true;
-//             } else if (message.name === 'RXM-COR') {
-//                 if (fields.ebn0 > 0)
-//                     db.lBebn0.set(fields.ebn0);
-//             } 
-//         } else if (message.protocol === 'NMEA') {
-//             if ((message.id === 'GSA') || (message.id === 'GSV')) {
-//                 nmeaSvsExtract(fields, message.talker);
-//             } else if (message.id === 'TXT') {
-//                 infTextExtract(fields.infTxt);
-//             }
-//         }
-//     }
-// }
+        // special extractions from messages
+        if (message.protocol === 'UBX') {
+            if (message.name === 'MON-VER') {
+				USTART.tableEntry('dev_tech', /*'\uE003'+*/
+						'<a target="_blank" href="https://www.u-blox.com/en/positioning-chips-and-modules">Positioning</a>', true);
+                infTextExtract(fields.swVer);
+                tableEntry('dev_hw', fields.hwVer);
+                if (fields.extVer) {
+                    for (let i = 0; i < fields.extVer.length; i ++)
+                        infTextExtract(fields.extVer[i]);
+                }
+            } else if (message.name === 'INF-NOTICE') {
+                infTextExtract(fields.infTxt);
+            } else if (message.name === 'MON-PMP') {
+                for (let i = 0; i <fields.entries; i ++) {
+                    let freq = fields.entry[i].centerFreq;
+                    const cn0 = fields.entry[i].cn0 + fields.entry[0].cn0Frac;
+                    if (cn0 > 0) {
+                        db.lBcn0.set(cn0);
+                    }
+                    const sys = 'PointPerfect';
+                    let sig = 'LBAND';
+                    if (0 < freq) sig += ' ' + (freq*1e-6).toFixed(2);
+                    let id = gnssLut[sys].ch;
+                    const keys = Object.keys(gnssLut[sys].freq);
+                    keys.forEach( function Check(key) {
+                        if (Math.abs(freq - gnssLut[sys].freq[key]) < 100000) {
+                            id = gnssLut[sys].ch + key;
+                        }
+                    } );
+                    if (undefined !== id) {
+                        nmeaSvsSet(sys, id, sig, cn0)
+                        nmeaSvDb.dirty = true;
+                    }
+                }   
+            } else if (message.name === 'RXM-QZSSL6') {
+                const sys = 'QZSS';
+                const sig = 'L6';
+                const id = gnssLut[sys].ch + fields.svId;
+                nmeaSvsSet(sys, id, sig, fields.cno);
+                nmeaSvDb.dirty = true;
+            } else if (message.name === 'RXM-PMP') {
+                if (fields.ebn0 > 0)
+                    db.lBebn0.set(fields.ebn0);
+                nmeaSvDb.dirty = true;
+            } else if (message.name === 'RXM-COR') {
+                if (fields.ebn0 > 0)
+                    db.lBebn0.set(fields.ebn0);
+            } 
+        } else if (message.protocol === 'NMEA') {
+            if ((message.id === 'GSA') || (message.id === 'GSV')) {
+                nmeaSvsExtract(fields, message.talker);
+            } else if (message.id === 'TXT') {
+                infTextExtract(fields.infTxt);
+            }
+        }
+    }
+}
 
-// // this function can be used on UBX INF or MON-VER or NMEA TXT messages
-// function infTextExtract(v) {
-// 	if (v) {
-// 		let t, k;
-// 		if (t = v.match(/^MOD=(.+)$/))            k = 'dev_mod';
-// 		else if (t = v.match(/^HW (.+)$/))        k = 'dev_hw';
-// 		else if (t = v.match(/^ROM (?:BASE|CORE) (.+)$/)) k = 'dev_rom';
-// 		else if (t = v.match(/^EXT CORE (.+)$/))  k = 'dev_flash';
-// 		else if (t = v.match(/^FWVER=(.+)$/))     k = 'dev_ext';
-// 		else if (t = v.match(/^PROTVER=(.+)$/))   k = 'dev_prot';
-// 		if (k && t && t.length==2) tableEntry(k, t[1]);
-// 	}
-// }
+// this function can be used on UBX INF or MON-VER or NMEA TXT messages
+function infTextExtract(v) {
+	if (v) {
+		let t, k;
+		if (t = v.match(/^MOD=(.+)$/))            k = 'dev_mod';
+		else if (t = v.match(/^HW (.+)$/))        k = 'dev_hw';
+		else if (t = v.match(/^ROM (?:BASE|CORE) (.+)$/)) k = 'dev_rom';
+		else if (t = v.match(/^EXT CORE (.+)$/))  k = 'dev_flash';
+		else if (t = v.match(/^FWVER=(.+)$/))     k = 'dev_ext';
+		else if (t = v.match(/^PROTVER=(.+)$/))   k = 'dev_prot';
+		if (k && t && t.length==2) tableEntry(k, t[1]);
+	}
+}
 
-// function nmeaSvsSet(sys, sv, sig, cno, az, elv, used, nmeaSv) {
-//     if (!nmeaSvDb[sys]) 	nmeaSvDb[sys] = {};
-//     if (!nmeaSvDb[sys][sv]) nmeaSvDb[sys][sv] = { cno:[] };
-//     if (used !== undefined) nmeaSvDb[sys][sv].used = used;
-//     if (nmeaSv !== undefined) nmeaSvDb[sys][sv].nmea = nmeaSv;
-//     if ((az !== undefined) && (0 <= az) && (360 >= az) && (elv !== undefined) && (0 <= elv)) {
-//         nmeaSvDb[sys][sv].az  = az;
-//         nmeaSvDb[sys][sv].elv = elv;
-//     }
-//     if (cno) {
-//         nmeaSvDb[sys][sv].cno[sig] = cno.toFixed(0);
-//         const len = Object.keys(nmeaSvDb[sys][sv].cno).length;
-//         if (len > nmeaSvDb.freqs) nmeaSvDb.freqs = len;
-//     }
-// }
+function nmeaSvsSet(sys, sv, sig, cno, az, elv, used, nmeaSv) {
+    if (!nmeaSvDb[sys]) 	nmeaSvDb[sys] = {};
+    if (!nmeaSvDb[sys][sv]) nmeaSvDb[sys][sv] = { cno:[] };
+    if (used !== undefined) nmeaSvDb[sys][sv].used = used;
+    if (nmeaSv !== undefined) nmeaSvDb[sys][sv].nmea = nmeaSv;
+    if ((az !== undefined) && (0 <= az) && (360 >= az) && (elv !== undefined) && (0 <= elv)) {
+        nmeaSvDb[sys][sv].az  = az;
+        nmeaSvDb[sys][sv].elv = elv;
+    }
+    if (cno) {
+        nmeaSvDb[sys][sv].cno[sig] = cno.toFixed(0);
+        const len = Object.keys(nmeaSvDb[sys][sv].cno).length;
+        if (len > nmeaSvDb.freqs) nmeaSvDb.freqs = len;
+    }
+}
 
-// // this function is intended to run either on GSA or GSV
-// function nmeaSvsExtract(fields, talker) {
-// 	if (fields.sv) {
-// 		for (let s = 0; s < fields.sv.length; s ++) {
-//             if (fields.sv[s] !== undefined) {
-//                 const ret = _nmeaSvId(fields.systemId, fields.sv[s], talker);
-//                 const sv = ret[0];
-//                 if (-1 === nmeaSvUsed.indexOf(sv)) {
-//                     nmeaSvUsed.push(sv);
-//                 }
-//             }
-// 		}
-//         nmeaSvDb.dirty = true;
-// 	} else if (fields.svs) {
-// 		for (let s = 0; s < fields.svs.length; s ++) {
-// 			const ret = _nmeaSvId(fields.systemId, fields.svs[s].sv, talker);
-// 			const sv = ret[0];
-// 			const nmeaSv = ret[1];
-// 			const sys = ret[2];
-// 			const sig = (gnssLut[sys].sig && gnssLut[sys].sig[fields.signalId]) ? gnssLut[sys].sig[fields.signalId] : 'L1 C/A';
-//             const used = (-1 !== nmeaSvUsed.indexOf(sv));
-// 			nmeaSvsSet(sys, sv, sig, fields.svs[s].cno, fields.svs[s].az, fields.svs[s].elv, used, nmeaSv);
-// 		}
-//         nmeaSvDb.dirty = true;
-// 	}
-// 	// NMEA convert the System, SV, Talker to our internal representation
-// 	function _nmeaSvId(s,i,t) {
-// 		s = (mapNmeaSignalId[s] !== undefined) ? mapNmeaSignalId[s] : 
-//             (mapNmeaTalker[t]   !== undefined) ? mapNmeaTalker[t] : 'GNSS';
-// 		let nmea;
-// 		if (gnssLut[s]) {
-// 			nmea = i;
-// 			if (i === undefined) i = '?';
-// 			else if (gnssLut[s].sv && (i >= gnssLut[s].sv[0]) && (i <= gnssLut[s].sv[1])) {
-// 				i += 1 - gnssLut[s].sv[0];
-// 			} else if (gnssLut[s].sbas && (i >= gnssLut[s].sbas[0]) && (i <= gnssLut[s].sbas[1])) {
-// 				i += 120 - gnssLut[s].sbas[0];
-// 				s = gnssLut.SBAS.map[i];
-//                 if (!s) s = 'SBAS';
-// 			} else if ((i >= 65) && (i <= 99)) {
-// 				i += 1 - 65;
-// 				s = 'GLONASS';
-// 			} else if ((i >= 193) && (i <= 197)) {
-// 				s = 'QZSS';
-// 			} else if ((i >= 152) && (i <= 158)) {
-// 				s = gnssLut.SBAS.map[i];
-//                 if (!s) s = 'SBAS';
-// 			} else if ((i >= 401) && (i <= 437)) {
-// 				i += 1 - 401;
-// 				s = 'BeiDou';
-// 			} else if ((i >= 301) && (i <= 336)) {
-// 				i += 1 - 301;
-// 				s = 'Galileo';
-// 			}
-// 			if (i === nmea) nmea = undefined;
-// 			i = gnssLut[s].ch + i;
-// 		}
-// 		return [ i, nmea, s ];
-// 	}
-// }
+// this function is intended to run either on GSA or GSV
+function nmeaSvsExtract(fields, talker) {
+	if (fields.sv) {
+		for (let s = 0; s < fields.sv.length; s ++) {
+            if (fields.sv[s] !== undefined) {
+                const ret = _nmeaSvId(fields.systemId, fields.sv[s], talker);
+                const sv = ret[0];
+                if (-1 === nmeaSvUsed.indexOf(sv)) {
+                    nmeaSvUsed.push(sv);
+                }
+            }
+		}
+        nmeaSvDb.dirty = true;
+	} else if (fields.svs) {
+		for (let s = 0; s < fields.svs.length; s ++) {
+			const ret = _nmeaSvId(fields.systemId, fields.svs[s].sv, talker);
+			const sv = ret[0];
+			const nmeaSv = ret[1];
+			const sys = ret[2];
+			const sig = (gnssLut[sys].sig && gnssLut[sys].sig[fields.signalId]) ? gnssLut[sys].sig[fields.signalId] : 'L1 C/A';
+            const used = (-1 !== nmeaSvUsed.indexOf(sv));
+			nmeaSvsSet(sys, sv, sig, fields.svs[s].cno, fields.svs[s].az, fields.svs[s].elv, used, nmeaSv);
+		}
+        nmeaSvDb.dirty = true;
+	}
+	// NMEA convert the System, SV, Talker to our internal representation
+	function _nmeaSvId(s,i,t) {
+		s = (mapNmeaSignalId[s] !== undefined) ? mapNmeaSignalId[s] : 
+            (mapNmeaTalker[t]   !== undefined) ? mapNmeaTalker[t] : 'GNSS';
+		let nmea;
+		if (gnssLut[s]) {
+			nmea = i;
+			if (i === undefined) i = '?';
+			else if (gnssLut[s].sv && (i >= gnssLut[s].sv[0]) && (i <= gnssLut[s].sv[1])) {
+				i += 1 - gnssLut[s].sv[0];
+			} else if (gnssLut[s].sbas && (i >= gnssLut[s].sbas[0]) && (i <= gnssLut[s].sbas[1])) {
+				i += 120 - gnssLut[s].sbas[0];
+				s = gnssLut.SBAS.map[i];
+                if (!s) s = 'SBAS';
+			} else if ((i >= 65) && (i <= 99)) {
+				i += 1 - 65;
+				s = 'GLONASS';
+			} else if ((i >= 193) && (i <= 197)) {
+				s = 'QZSS';
+			} else if ((i >= 152) && (i <= 158)) {
+				s = gnssLut.SBAS.map[i];
+                if (!s) s = 'SBAS';
+			} else if ((i >= 401) && (i <= 437)) {
+				i += 1 - 401;
+				s = 'BeiDou';
+			} else if ((i >= 301) && (i <= 336)) {
+				i += 1 - 301;
+				s = 'Galileo';
+			}
+			if (i === nmea) nmea = undefined;
+			i = gnssLut[s].ch + i;
+		}
+		return [ i, nmea, s ];
+	}
+}
 
-// // Table
-// // ------------------------------------------------------------------------------------
-// var table = {};
-// function tableEntry(entry, val, html) {
-//     if (typeof val === 'string') 
-// 		val = val.replace(/^"(.+(?="$))"$/,'$1');
-// 	else if (!val) val = '';
-//     _entry(entry);
-// 	if(table[entry]) {
-// 		if (html)
-// 			table[entry].innerHTML = val;
-// 		else 
-// 			table[entry].textContent = val;
-// 		table[entry].parentNode.removeAttribute('hidden');
-// 		if (entry == 'dev_typenum') {
-// 			// SHO: add the script tile for some NINA-B3
-// 			if (val.match(/^NINA-B31\d-20B/)) {
-// 				let el = document.getElementById('tile_script');
-// 				if (el) el.removeAttribute('hidden');
-// 			}
-// 		} else if (entry == 'dev_mod' /* THIS CODE IS DISABLED */ && false) {
-// 			let query = val;
-// 			let p = val.indexOf('-');
-// 			let c = val.length;
-// 			while (--c >= p) {
-// 				query += '+' + val.slice(0, c);
-// 			}
-// 			let url = 'https://www.u-blox.com/en/uapp/productinfo/' + query;
-// 			const Http = new XMLHttpRequest();
-//             var rndNum = Math.round(Math.random() * 10000);
-//             if ((Http.readyState == Http.DONE) && (Http.status == 200))
-//             {
-//                 Http.onreadystatechange = function(e){
-//                     if(this.readyState === Http.DONE && this.status === 200) {
-//                         let json = {}
-//                         let m = this.responseText.replace(/<([^>]+)>([^<]*)<\/([^>]+)>/g, function _replace(a,b,c) {
-//                             json[b] = c;
-//                         });
-//                         if (json.image) {
-//                             let a = json.image.split('|');
-//                             let image = a.map( function (i) { return '<img class="prod_img" src="'+i+'" />'; } ).join('');
-//                             _entry('dev_img', image);
-//                         }
-//                         if (json.url && json.name && json.subtitle)
-//                             _entry('dev_prod', '<a target="_blank" href="'+json.url+'">'+json.name+'</a><br>'+json.subtitle);
-//                         if (json.descr) {
-//                             let descr = json.descr.replace(/\&gt;/g, '>').replace(/\&lt;/g, '<');
-//                             _entry('dev_descr', descr);
-//                         }
-//                     }
-//                 };
-//                 Http.open('GET', url, true);
-//                 Http.send();
-//             };
-//         }
-//     }
-// 	function _entry(e, v) {
-// 		if (table[e] === undefined) {
-// 			const el = document.getElementById(e);
-// 			table[e] = el ? el : null;
-// 		}
-// 		if (table[e] && v) {
-// 			table[e].innerHTML = v;
-// 			table[e].parentNode.removeAttribute('hidden');;
-// 		}
-// 	}
-// }
+// Table
+// ------------------------------------------------------------------------------------
+var table = {};
+function tableEntry(entry, val, html) {
+    if (typeof val === 'string') 
+		val = val.replace(/^"(.+(?="$))"$/,'$1');
+	else if (!val) val = '';
+    _entry(entry);
+	if(table[entry]) {
+		if (html)
+			table[entry].innerHTML = val;
+		else 
+			table[entry].textContent = val;
+		table[entry].parentNode.removeAttribute('hidden');
+		if (entry == 'dev_typenum') {
+			// SHO: add the script tile for some NINA-B3
+			if (val.match(/^NINA-B31\d-20B/)) {
+				let el = document.getElementById('tile_script');
+				if (el) el.removeAttribute('hidden');
+			}
+		} else if (entry == 'dev_mod' /* THIS CODE IS DISABLED */ && false) {
+			let query = val;
+			let p = val.indexOf('-');
+			let c = val.length;
+			while (--c >= p) {
+				query += '+' + val.slice(0, c);
+			}
+			let url = 'https://www.u-blox.com/en/uapp/productinfo/' + query;
+			const Http = new XMLHttpRequest();
+            var rndNum = Math.round(Math.random() * 10000);
+            if ((Http.readyState == Http.DONE) && (Http.status == 200))
+            {
+                Http.onreadystatechange = function(e){
+                    if(this.readyState === Http.DONE && this.status === 200) {
+                        let json = {}
+                        let m = this.responseText.replace(/<([^>]+)>([^<]*)<\/([^>]+)>/g, function _replace(a,b,c) {
+                            json[b] = c;
+                        });
+                        if (json.image) {
+                            let a = json.image.split('|');
+                            let image = a.map( function (i) { return '<img class="prod_img" src="'+i+'" />'; } ).join('');
+                            _entry('dev_img', image);
+                        }
+                        if (json.url && json.name && json.subtitle)
+                            _entry('dev_prod', '<a target="_blank" href="'+json.url+'">'+json.name+'</a><br>'+json.subtitle);
+                        if (json.descr) {
+                            let descr = json.descr.replace(/\&gt;/g, '>').replace(/\&lt;/g, '<');
+                            _entry('dev_descr', descr);
+                        }
+                    }
+                };
+                Http.open('GET', url, true);
+                Http.send();
+            };
+        }
+    }
+	function _entry(e, v) {
+		if (table[e] === undefined) {
+			const el = document.getElementById(e);
+			table[e] = el ? el : null;
+		}
+		if (table[e] && v) {
+			table[e].innerHTML = v;
+			table[e].parentNode.removeAttribute('hidden');;
+		}
+	}
+}
 
-// const DEGREE_SYMBOL = '\u00B0';
-// function tableUpdate(db) {
-// 	let keys = Object.keys(db);
-// 	keys.forEach( function Table(key) {
-// 		tableEntry('tab_'+key, db[key]);
-// 	} );
-// }
-// function _td(elem, cls) { 
-// 	return (cls ? ('<td class="'+cls+'">') : '<td>') + 
-// 		   ((elem!==undefined)?elem:'') + '</td>';
-// }		
-// function tableSvs(svdb) {
-// 	if (table.sv_list === undefined) {
-// 		const el  = document.getElementById('sv_list');
-// 		table.sv_list = el ? el : null;
-// 	}
-// 	if (table.sv_list) {
-// 		let gnssKeys = Object.keys(gnssLut);
-// 		let cnt = 0;
-// 		gnssKeys.forEach( function _loopSys(sys) {
-// 			var lut = gnssLut[sys];
-// 			if (svdb[sys]) {
-// 				let svKeys = Object.keys(svdb[sys]);
-// 				svKeys.forEach( function _loopSv(svid) {
-// 					let sv = svdb[sys][svid];
-//                     //let icon =  (sv.used) ? feather.icons["x-square"] : feather.icons["square"];
-//                     //let srcUsed = 'data:image/svg+xml;utf8,' + icon.toSvg();
-// 					let iconUsed  = (sv.used === undefined) ? '' : sv.used ? '◾' : '◽'; // 🟩🟥🟢🔴⚪⭕◾◽
-// 					const txtUsed = (sv.used === undefined) ? '' : 'Satellite ' + (sv.used ? '' :'is not ') + 'used in navigation solution';
-//                     const txtSys = flagsEmojy[lut.flag] + ' ' + sys;
-// 					let sig = Object.keys(sv.cno);
-// 					let cno = sig.map( function(freq) { 
-// 						let c = sv.cno[freq];
-// 						if (c && (freq !== '?')) c += ' ' + freq;
-// 						return c;
-// 					});
-//                     cno = cno.join(', ');
-// 			        const nmea = sv.nmea ? 'NMEA Satellite ID: ' + sv.nmea : '';
-// 					if (cnt < table.sv_list.childElementCount) {
-// 						let tr = table.sv_list.childNodes[cnt];
-// 						tr.childNodes[0].textContent = txtSys;
-// 						tr.childNodes[1].textContent = svid;
-// 					    tr.childNodes[1].title       = nmea;
-//                         tr.childNodes[2].textContent = iconUsed;
-//                         tr.childNodes[2].title = txtUsed;
-//                         tr.childNodes[3].textContent = cno;
-// 						tr.childNodes[4].textContent = sv.elv;
-// 						tr.childNodes[5].textContent = sv.az;
-// 					} else {
-// 						let tr = document.createElement('tr');
-// 						tr.className = 'sv_row';
-// 						let td = document.createElement('td');
-// 						  td.textContent = txtSys;
-// 						  tr.appendChild(td);
-//         				td = document.createElement('td');
-// 						  td.textContent = svid;
-// 						  td.style.textAlign = 'center';
-// 						  td.title = nmea;
-// 						  tr.appendChild(td);
-// 						td = document.createElement('td');
-// 						  td.style.textAlign = 'center';
-//                           td.textContent = iconUsed;
-//                           td.title = txtUsed;
-// 						  tr.appendChild(td); // SV
-// 						td = document.createElement('td');
-// 						  td.style.textAlign = 'center';
-// 						  td.textContent = cno;
-// 						  tr.appendChild(td);
-// 						td = document.createElement('td');
-// 						  td.style.textAlign = 'right';
-// 						  td.textContent = sv.elv;
-// 						  tr.appendChild(td);
-// 						td = document.createElement('td');
-// 						  td.style.textAlign = 'right';
-// 						  td.textContent = sv.az;
-// 						  tr.appendChild(td);
-// 						table.sv_list.appendChild(tr);
-// 					}
-// 					cnt ++;
-// 				} );
-// 			}
-// 		} ); 
-// 		for (cnt = table.sv_list.childElementCount - cnt; cnt > 0; cnt --)
-// 			table.sv_list.removeChild(table.sv_list.lastChild);
-// 	}
-// }
+const DEGREE_SYMBOL = '\u00B0';
+function tableUpdate(db) {
+	let keys = Object.keys(db);
+	keys.forEach( function Table(key) {
+		tableEntry('tab_'+key, db[key]);
+	} );
+}
+function _td(elem, cls) { 
+	return (cls ? ('<td class="'+cls+'">') : '<td>') + 
+		   ((elem!==undefined)?elem:'') + '</td>';
+}		
+function tableSvs(svdb) {
+	if (table.sv_list === undefined) {
+		const el  = document.getElementById('sv_list');
+		table.sv_list = el ? el : null;
+	}
+	if (table.sv_list) {
+		let gnssKeys = Object.keys(gnssLut);
+		let cnt = 0;
+		gnssKeys.forEach( function _loopSys(sys) {
+			var lut = gnssLut[sys];
+			if (svdb[sys]) {
+				let svKeys = Object.keys(svdb[sys]);
+				svKeys.forEach( function _loopSv(svid) {
+					let sv = svdb[sys][svid];
+                    //let icon =  (sv.used) ? feather.icons["x-square"] : feather.icons["square"];
+                    //let srcUsed = 'data:image/svg+xml;utf8,' + icon.toSvg();
+					let iconUsed  = (sv.used === undefined) ? '' : sv.used ? '◾' : '◽'; // 🟩🟥🟢🔴⚪⭕◾◽
+					const txtUsed = (sv.used === undefined) ? '' : 'Satellite ' + (sv.used ? '' :'is not ') + 'used in navigation solution';
+                    const txtSys = flagsEmojy[lut.flag] + ' ' + sys;
+					let sig = Object.keys(sv.cno);
+					let cno = sig.map( function(freq) { 
+						let c = sv.cno[freq];
+						if (c && (freq !== '?')) c += ' ' + freq;
+						return c;
+					});
+                    cno = cno.join(', ');
+			        const nmea = sv.nmea ? 'NMEA Satellite ID: ' + sv.nmea : '';
+					if (cnt < table.sv_list.childElementCount) {
+						let tr = table.sv_list.childNodes[cnt];
+						tr.childNodes[0].textContent = txtSys;
+						tr.childNodes[1].textContent = svid;
+					    tr.childNodes[1].title       = nmea;
+                        tr.childNodes[2].textContent = iconUsed;
+                        tr.childNodes[2].title = txtUsed;
+                        tr.childNodes[3].textContent = cno;
+						tr.childNodes[4].textContent = sv.elv;
+						tr.childNodes[5].textContent = sv.az;
+					} else {
+						let tr = document.createElement('tr');
+						tr.className = 'sv_row';
+						let td = document.createElement('td');
+						  td.textContent = txtSys;
+						  tr.appendChild(td);
+        				td = document.createElement('td');
+						  td.textContent = svid;
+						  td.style.textAlign = 'center';
+						  td.title = nmea;
+						  tr.appendChild(td);
+						td = document.createElement('td');
+						  td.style.textAlign = 'center';
+                          td.textContent = iconUsed;
+                          td.title = txtUsed;
+						  tr.appendChild(td); // SV
+						td = document.createElement('td');
+						  td.style.textAlign = 'center';
+						  td.textContent = cno;
+						  tr.appendChild(td);
+						td = document.createElement('td');
+						  td.style.textAlign = 'right';
+						  td.textContent = sv.elv;
+						  tr.appendChild(td);
+						td = document.createElement('td');
+						  td.style.textAlign = 'right';
+						  td.textContent = sv.az;
+						  tr.appendChild(td);
+						table.sv_list.appendChild(tr);
+					}
+					cnt ++;
+				} );
+			}
+		} ); 
+		for (cnt = table.sv_list.childElementCount - cnt; cnt > 0; cnt --)
+			table.sv_list.removeChild(table.sv_list.lastChild);
+	}
+}
 
-// // Chart
-// // ------------------------------------------------------------------------------------
-// let chart;
-// const svLabels = [];
-// const svLevels = [];
+// Chart
+// ------------------------------------------------------------------------------------
+let chart;
+const svLabels = [];
+const svLevels = [];
 
-// const svAzEl = [ [], [] ];
-// const svName = [ [], [] ];
-// let chartAzEl;
-// let axis = [];
-// let svAzElLabel = [];
-// for (let i = 0; i < 360; i ++) svAzElLabel[i] = '';
-// for (let i = 0; i < 360; i += 45) {
-// 	const label = [ "N", "NE", "E", "SE", "S", "SW", "W", "NW" ];
-// 	axis[i] = 0;
-//     axis[i+1] = 90;
-// 	svAzElLabel[i] = label[i/45];
-// }
-// let dataAzEl = { labels:svAzElLabel, datasets: [ { fill: false, pointRadius: 0, borderWidth:1, data: axis } ] };
+const svAzEl = [ [], [] ];
+const svName = [ [], [] ];
+let chartAzEl;
+let axis = [];
+let svAzElLabel = [];
+for (let i = 0; i < 360; i ++) svAzElLabel[i] = '';
+for (let i = 0; i < 360; i += 45) {
+	const label = [ "N", "NE", "E", "SE", "S", "SW", "W", "NW" ];
+	axis[i] = 0;
+    axis[i+1] = 90;
+	svAzElLabel[i] = label[i/45];
+}
+let dataAzEl = { labels:svAzElLabel, datasets: [ { fill: false, pointRadius: 0, borderWidth:1, data: axis } ] };
 
-// function chartSvs(svdb) {
-// 	const col = [ COL_BLUE, COL_GREEN ];
-// 	const bkg = col.map( v => toRGBa(v, 0.5) );
-// 	svLabels.length = 0;
-// 	svAzEl[0].length = 0;
-//     svAzEl[1].length = 0;
-//     for (let f = 0; f < svdb.freqs; f ++)
-// 		svLevels[f] = { data: [], borderWidth: 1, borderColor: [], backgroundColor: [] };
-//     svLevels.length = svdb.freqs;
-//     const gnssKeys = Object.keys(gnssLut);
-// 	gnssKeys.forEach( function _system(sys) {
-// 		const lut = gnssLut[sys];
-// 		if (svdb[sys]) {
-// 			const svKeys = Object.keys(svdb[sys]);
-// 			svKeys.forEach( function _sv(svid) {
-// 				const sv = svdb[sys][svid];
-// 				const sig = Object.keys(sv.cno);
-// 				// prepare for the signal plot
-// 				if (sig.length) {
-// 					svLabels.push(svid);
-// 					for (let f = 0; f < svdb.freqs; f ++) {
-// 						svLevels[f].data.push(sv.cno[sig[f]]);
-// 						const u = sv.used?1:0;
-// 						svLevels[f].backgroundColor.push(bkg[u]);
-// 						svLevels[f].borderColor.push(col[u]);
-// 					}
-// 				}
-//                 // prepare for the az el plot
-//                 if (sv.az && sv.elv) {
-//                     const ai = Math.round(sv.az) % (360);
-//                     let i = 0;
-//                     let u = sv.used ? 1 : 0;
-//                     while (1) {
-//                         if (undefined === svAzEl[u][i]) svAzEl[u][i] = [], svName[u][i] = [];
-//                         if (undefined === svAzEl[u][i][ai]) break;
-// 						i ++;
-//                     }
-//                     svAzEl[u][i][ai] = sv.elv;
-// 					svName[u][i][ai] = svid;
-//                 }
-// 			} );
-// 		}
-//     } ); 
+function chartSvs(svdb) {
+	const col = [ COL_BLUE, COL_GREEN ];
+	const bkg = col.map( v => toRGBa(v, 0.5) );
+	svLabels.length = 0;
+	svAzEl[0].length = 0;
+    svAzEl[1].length = 0;
+    for (let f = 0; f < svdb.freqs; f ++)
+		svLevels[f] = { data: [], borderWidth: 1, borderColor: [], backgroundColor: [] };
+    svLevels.length = svdb.freqs;
+    const gnssKeys = Object.keys(gnssLut);
+	gnssKeys.forEach( function _system(sys) {
+		const lut = gnssLut[sys];
+		if (svdb[sys]) {
+			const svKeys = Object.keys(svdb[sys]);
+			svKeys.forEach( function _sv(svid) {
+				const sv = svdb[sys][svid];
+				const sig = Object.keys(sv.cno);
+				// prepare for the signal plot
+				if (sig.length) {
+					svLabels.push(svid);
+					for (let f = 0; f < svdb.freqs; f ++) {
+						svLevels[f].data.push(sv.cno[sig[f]]);
+						const u = sv.used?1:0;
+						svLevels[f].backgroundColor.push(bkg[u]);
+						svLevels[f].borderColor.push(col[u]);
+					}
+				}
+                // prepare for the az el plot
+                if (sv.az && sv.elv) {
+                    const ai = Math.round(sv.az) % (360);
+                    let i = 0;
+                    let u = sv.used ? 1 : 0;
+                    while (1) {
+                        if (undefined === svAzEl[u][i]) svAzEl[u][i] = [], svName[u][i] = [];
+                        if (undefined === svAzEl[u][i][ai]) break;
+						i ++;
+                    }
+                    svAzEl[u][i][ai] = sv.elv;
+					svName[u][i][ai] = svid;
+                }
+			} );
+		}
+    } ); 
 
-// 	 if (!chart) {
-//         let el = document.getElementById('svs');
-//         if ((Chart !== undefined) && el && el.clientWidth && el.clientHeight) {
-//             const spec = {
-//                 type: 'bar', data: { labels: svLabels, datasets: svLevels },
-//                 options: {
-//                     maintainAspectRatio: false,
-//                     plugins: { 
-//                         tooltip: {
-//                             callbacks: {
-//                                 title: _toolTipTitle,
-//                                 afterLabel: _toolTipText,
-//                             },
-//                         }, 
-//                     },
-//                     scales: {
-//                         x: { 
-//                             ticks: { 
-//                                 maxRotation:0, autoSkip:false, padding:0, font:{ size:9 },
-//                                 callback: function _EvenTick(v,i) { return (i % 2) ? '' : this.getLabelForValue(v); }
-//                             },
-//                             stacked: true, 
-//                         },
-//                         x2: { 
-//                             grid: {
-//                                 drawBorder: false, // hide the x axis
-//                                 drawTicks: false,
-//                             },
-//                             ticks: { 
-//                                 maxRotation:0, autoSkip:false, padding:0, font:{ size:9 },
-//                                 callback: function _OddTick(v,i) { return (i % 2) ? this.getLabelForValue(v) : ''; }
-//                             },
-//                             stacked: true, 
-//                         },
-//                         y: {
-//                             display: true,
-//                             ticks: { min: 0, suggestedMax:40, stepSize:5, maxRotation:0, },
-//                             title: { display: true, text: 'C/N0 [dBHz]', fontStyle: 'bold', },
-//                             stacked: false, 
-//                         }
-//                     }
-//                 }
-//             };
-//             const ctx = el.getContext('2d');
-//             chart = new Chart(ctx, spec);
-//             function _toolTipTitle(context) {
-//                 return 'Satellite: '+ context[0].label;
-//             }
-//             function _toolTipText(context) {
-//                 // TODO add signal and maybe second CNO ? 
-//                 // context.chart.data.labels[context.dataIndex]
-//                 // context.chart.data.datasets[0].data[context.dataIndex] // CNO[0]
-//                 // context.chart.data.datasets[0].data[context.dataIndex] // CNO[1]
-//                 return 'C/N0: ' + context.formattedValue + ' dBHz';
-//             }
-//         }
-//     } else {
-//         chart.update(0);
-//     }
+	 if (!chart) {
+        let el = document.getElementById('svs');
+        if ((Chart !== undefined) && el && el.clientWidth && el.clientHeight) {
+            const spec = {
+                type: 'bar', data: { labels: svLabels, datasets: svLevels },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        tooltip: {
+                            callbacks: {
+                                title: _toolTipTitle,
+                                afterLabel: _toolTipText,
+                            },
+                        }, 
+                    },
+                    scales: {
+                        x: { 
+                            ticks: { 
+                                maxRotation:0, autoSkip:false, padding:0, font:{ size:9 },
+                                callback: function _EvenTick(v,i) { return (i % 2) ? '' : this.getLabelForValue(v); }
+                            },
+                            stacked: true, 
+                        },
+                        x2: { 
+                            grid: {
+                                drawBorder: false, // hide the x axis
+                                drawTicks: false,
+                            },
+                            ticks: { 
+                                maxRotation:0, autoSkip:false, padding:0, font:{ size:9 },
+                                callback: function _OddTick(v,i) { return (i % 2) ? this.getLabelForValue(v) : ''; }
+                            },
+                            stacked: true, 
+                        },
+                        y: {
+                            display: true,
+                            ticks: { min: 0, suggestedMax:40, stepSize:5, maxRotation:0, },
+                            title: { display: true, text: 'C/N0 [dBHz]', fontStyle: 'bold', },
+                            stacked: false, 
+                        }
+                    }
+                }
+            };
+            const ctx = el.getContext('2d');
+            chart = new Chart(ctx, spec);
+            function _toolTipTitle(context) {
+                return 'Satellite: '+ context[0].label;
+            }
+            function _toolTipText(context) {
+                // TODO add signal and maybe second CNO ? 
+                // context.chart.data.labels[context.dataIndex]
+                // context.chart.data.datasets[0].data[context.dataIndex] // CNO[0]
+                // context.chart.data.datasets[0].data[context.dataIndex] // CNO[1]
+                return 'C/N0: ' + context.formattedValue + ' dBHz';
+            }
+        }
+    } else {
+        chart.update(0);
+    }
     
-//     // this is an azimuth elevation plot with used status
-//     dataAzEl.datasets.length = 1; // just keep the axis 
-//     for (let u = 0; u < svAzEl.length; u ++) {
-//         for (let i = 0; i < svAzEl[u].length; i ++) {
-//             dataAzEl.datasets.push( {
-//                 fill: false, radius: 9, pointRadius: 9, pointHoverRadius: 11,
-//                 pointBackgroundColor: bkg[u], pointBorderColor: col[u], borderColor: 'transparent',
-//                 data: svAzEl[u][i],
-// 				name: svName[u][i], } );
-//         }
-//     }
-//     if (!chartAzEl) {
-//         const el = document.getElementById("svs2");
-//         if ((Chart !== undefined) && el && el.clientWidth && el.clientHeight) {
-//             const chartOptions = {
-//                 plugins: { 
-//                     tooltip: {
-//                         callbacks: {
-//                             title: _toolTipTitle,
-//                             afterLabel: _toolTipText, 
-//                         },
-//                     },
-//                 },
-//                 scales: {  
-//                     r : {
-//                         angleLines: { color:'transparent', },
-//                         ticks: { beginAtZero: true, stepSize: 15 }, 
-//                         min: 0, max: 90, reverse:true
-//                     }
-//                 },
-//             };
-//             const ctx = el.getContext('2d');
-//             chartAzEl = new Chart(ctx, { type: 'radar', data: dataAzEl, options: chartOptions } );
-//         }
-//     } else {
-//         chartAzEl.update(0);
-//     }
-//     function _toolTipTitle(context) {
-//         const ix = context[0].datasetIndex;
-//         const az = context[0].dataIndex;
-//         const name = dataAzEl.datasets[ix].name[az];
-//         return 'Satellite: '+name;
-//     }
-//     function _toolTipText(context) {
-//         //const ix = context.datasetIndex;
-//         const az = context.dataIndex;
-//         const el = context.formattedValue;
-//         //const el2 = dataAzEl.datasets[ix].data[az];
-//         //const name = dataAzEl.datasets[ix].name[az];
-//         return 'Elevation: ' + el + '\nAzimuth: ' + az;
-//     }
-// }
+    // this is an azimuth elevation plot with used status
+    dataAzEl.datasets.length = 1; // just keep the axis 
+    for (let u = 0; u < svAzEl.length; u ++) {
+        for (let i = 0; i < svAzEl[u].length; i ++) {
+            dataAzEl.datasets.push( {
+                fill: false, radius: 9, pointRadius: 9, pointHoverRadius: 11,
+                pointBackgroundColor: bkg[u], pointBorderColor: col[u], borderColor: 'transparent',
+                data: svAzEl[u][i],
+				name: svName[u][i], } );
+        }
+    }
+    if (!chartAzEl) {
+        const el = document.getElementById("svs2");
+        if ((Chart !== undefined) && el && el.clientWidth && el.clientHeight) {
+            const chartOptions = {
+                plugins: { 
+                    tooltip: {
+                        callbacks: {
+                            title: _toolTipTitle,
+                            afterLabel: _toolTipText, 
+                        },
+                    },
+                },
+                scales: {  
+                    r : {
+                        angleLines: { color:'transparent', },
+                        ticks: { beginAtZero: true, stepSize: 15 }, 
+                        min: 0, max: 90, reverse:true
+                    }
+                },
+            };
+            const ctx = el.getContext('2d');
+            chartAzEl = new Chart(ctx, { type: 'radar', data: dataAzEl, options: chartOptions } );
+        }
+    } else {
+        chartAzEl.update(0);
+    }
+    function _toolTipTitle(context) {
+        const ix = context[0].datasetIndex;
+        const az = context[0].dataIndex;
+        const name = dataAzEl.datasets[ix].name[az];
+        return 'Satellite: '+name;
+    }
+    function _toolTipText(context) {
+        //const ix = context.datasetIndex;
+        const az = context.dataIndex;
+        const el = context.formattedValue;
+        //const el2 = dataAzEl.datasets[ix].data[az];
+        //const name = dataAzEl.datasets[ix].name[az];
+        return 'Elevation: ' + el + '\nAzimuth: ' + az;
+    }
+}
 
-// // Map 
-// // ------------------------------------------------------------------------------------
-// var map;
-// var point;
-// var track;
-// var dots;
-// var horizAcc;
-// var plPosEll;
-// var plVelEll;
-// var speedVec;
-// const MAP_POINTS = 10000;
+// Map 
+// ------------------------------------------------------------------------------------
+var map;
+var point;
+var track;
+var dots;
+var horizAcc;
+var plPosEll;
+var plVelEll;
+var speedVec;
+const MAP_POINTS = 10000;
 
-// function makeEllipse(position, major, minor, angle) {
-//     let coords = [];
-//     if ((position !== undefined) && (major !== undefined) && (minor !== undefined) && (angle !== undefined) && (major < 100000) && (major > 0)) {
-//         const circle = new ol.geom.Circle( position, 1.0);
-//         const polygon = ol.geom.Polygon.fromCircle(circle, 64);
-//         polygon.scale(minor, major); 
-//         polygon.rotate(-(angle * Math.PI) / 180.0, circle.getCenter());
-//         coords = polygon.getCoordinates();
-//     }
-//     return coords;
-// }
+function makeEllipse(position, major, minor, angle) {
+    let coords = [];
+    if ((position !== undefined) && (major !== undefined) && (minor !== undefined) && (angle !== undefined) && (major < 100000) && (major > 0)) {
+        const circle = new ol.geom.Circle( position, 1.0);
+        const polygon = ol.geom.Polygon.fromCircle(circle, 64);
+        polygon.scale(minor, major); 
+        polygon.rotate(-(angle * Math.PI) / 180.0, circle.getCenter());
+        coords = polygon.getCoordinates();
+    }
+    return coords;
+}
 
-// function clearMapTrack(e) {
-//     if (track) track.getGeometry().setCoordinates([]);
-//     if (dots) dots.getGeometry().setCoordinates([]);
-// }
+function clearMapTrack(e) {
+    if (track) track.getGeometry().setCoordinates([]);
+    if (dots) dots.getGeometry().setCoordinates([]);
+}
 
-// function centerMap(lon, lat, cogt, gSpeed, hAcc, plPos, plVel) {
-//     var el = document.getElementById('map');
-//     if (el && (ol !== undefined) && !isNaN(lon) && !isNaN(lat)) {
-//         el.removeAttribute('hidden');
-//         let scale = Math.cos(lat * Math.PI / 180.0 );
-//         let position = ol.proj.fromLonLat([Number(lon), Number(lat)]);
-//         let radius = !isNaN(hAcc) ? scale * hAcc : 0;
-//         plPos.major *= scale; 
-//         plPos.minor *= scale;
-//         let posEll = plPos ? makeEllipse(position, plPos.major, plPos.minor, plPos.angle) : [];
-//         let velEll = [];
-//         let velVect = [];
-//         if (!isNaN(cogt) && !isNaN(gSpeed)) {
-//             plVel.major *= scale; 
-//             plVel.minorV *= scale;
-//             plVel.gSpeed *= scale;
-//             cogt *= Math.PI / 180.0;
-//             const positionV = [ position[0] + Math.sin(cogt) * gSpeed, 
-//                                 position[1] + Math.cos(cogt) * gSpeed];
-//             velEll = plVel ? makeEllipse(positionV, plVel.major, plVel.minor, plVel.angle) : [];
-//             velVect = [ position, positionV ];
-//         }
-//         if (!map && el.clientWidth && el.clientHeight) {
-// 			// track
-//             track = new ol.Feature({ geometry: new ol.geom.LineString( [ position ] ) });
-//             let stroke = new ol.style.Stroke({width: 2, color: toRGBa(COL_HERO, 0.8), lineCap:'round' });
-//             track.setStyle( new ol.style.Style({ stroke: stroke }) );
-//             dots = new ol.Feature({ geometry: new ol.geom.MultiPoint([ position ]) });
-//             let vertices = new ol.style.Circle({ radius: 2, fill: new ol.style.Fill({ color: COL_HERO }), });
-//             dots.setStyle( new ol.style.Style({ image: vertices }) );
-//             // point
-//             point = new ol.Feature(new ol.geom.Point(position));
-//             let svg = feather.icons.crosshair.toSvg({ color: 'white', 'stroke-width': 2, width: 96, height: 96, });
-//             let icon    = new ol.style.Icon({ color: COL_BLUE, scale: 0.25, src: 'data:image/svg+xml;utf8,' + svg,
-// 											  anchor: [0.5, 0.5], anchorXUnits: 'fraction', anchorYUnits: 'fraction', });
-//             point.setStyle( new ol.style.Style( { image: icon } ) );
-// 			// ellispe
-//             const ellStyle = new ol.style.Style( { 
-//                 stroke: new ol.style.Stroke({ color: COL_RED, width:1, lineCap:'round' }),
-//                 fill:   new ol.style.Fill(  { color: toRGBa(COL_RED, 0.3), }),
-//             } );
-//             horizAcc = new ol.Feature({ geometry: new ol.geom.Circle( position, radius)});
-//             plPosEll = new ol.Feature({ geometry: new ol.geom.Polygon( posEll ) });
-//             plVelEll = new ol.Feature({ geometry: new ol.geom.Polygon( velEll ) });
-//             speedVec = new ol.Feature({ geometry: new ol.geom.LineString( velVect ) });
-//             // put things together 
-//             let tile    = new ol.layer.Tile(  { source: new ol.source.OSM() });
-//             let vectPt  = new ol.layer.Vector({ source: new ol.source.Vector({ features: [ point ] }) });
-//             let vectTrk = new ol.layer.Vector({ source: new ol.source.Vector({ features: [ track, dots ] }) });
-//             let vectEll = new ol.layer.Vector({ source: new ol.source.Vector({ features: [ horizAcc, plPosEll, plVelEll, speedVec ] }), style: ellStyle });
-//             let intr = ol.interaction.defaults.defaults({ onFocusOnly: true, mouseWheelZoom: false });
-//             let ctrl = ol.control.defaults.defaults({ attribution: false, zoom: true, rotate: true, });
-//             class mapToolbar extends ol.control.Control {
-//                 constructor(opt_options) {
-//                     const options = opt_options || {};
-//                     // useful unicode icons ◌◯☉⌖⬭⬬⬮⬯
-//                     const btnPoint = document.createElement('div');
-//                     btnPoint.className = 'overlay_button'
-//                     btnPoint.innerHTML = feather.icons.crosshair.toSvg();
-//                     btnPoint.title = "Current location marker";
-//                     btnPoint.type = "button";
-//                     const btnError = document.createElement('button');
-//                     btnError.innerHTML = 'O';
-//                     btnError.style.fontStyle = 'italic';
-//                     btnError.style.fontWeight = '400';
-//                     btnError.title = "Horizontal accuracy estimate\nand protection level ellipse";
-//                     const btnTrack = document.createElement('button');
-//                     btnTrack.innerHTML = '☡';
-//                     btnTrack.title = "Ground track";
-//                     btnTrack.type = "button";
-//                     const element = document.createElement('div');
-//                     element.className = 'overlay_ctrl ol-options ol-control';
-//                     element.appendChild(btnPoint);
-//                     element.appendChild(btnError);
-//                     element.appendChild(btnTrack);
-//                     super({
-//                         element: element,
-//                         target: options.target,
-//                     });
-//                     btnPoint.addEventListener('click', this.showHideLayers.bind(this, vectPt), false);
-//                     btnTrack.addEventListener('click', this.showHideLayers.bind(this, vectTrk), false);
-//                     btnError.addEventListener('click', this.showHideLayers.bind(this, vectEll), false);
-//                 }
-//                 showHideLayers(layer) { layer.setOpacity( (layer.getOpacity() == 0) ? 1 : 0 ); }
-//             }
-//             const overviewMap = new ol.control.OverviewMap({
-//                 collapseLabel: '\u00AB',
-//                 layers: [ new ol.layer.Tile(  { source: new ol.source.OSM() } )],
-//                 expandFactor: 4,
-//                 label: '\u00BB',
-//                 collapsed: true,
-//                 rotation: Math.PI / 6,
-//             });
-//             const scaleLine = new ol.control.ScaleLine({ units: 'metric', minWidth: 100, /*bar: true, steps: 4, text: true,*/ })
-//             ctrl.extend([ new mapToolbar(), scaleLine, overviewMap, new ol.control.FullScreen() ]);
-//             let view = new ol.View( {  center:position, zoom: 15, maxZoom: 27, });
-//             let opt = { 
-//                 controls: ctrl, 
-//                 interactions: intr, 
-//                 layers: [ tile, vectEll, vectTrk, vectPt ], 
-//                 target: 'map', 
-//                 view: view };
-// 			map = new ol.Map(opt);
-//             map.getView().on('change:resolution', function _onZoomed(event){
-//                 var zLevel = this.getZoom();     
-//                 if (zLevel >= 20 && overviewMap.getCollapsed()) {
-//                     overviewMap.setCollapsed(false);
-//                 } else if (zLevel < 15 && !overviewMap.getCollapsed()) {
-//                     overviewMap.setCollapsed(true);
-//                 } 
-//             });
-// 		} else if (map) {
-//             const extent = map.getView().calculateExtent(map.getSize());
-//             if (!(extent && extent[0]<=position[0] && extent[2]>=position[0] &&
-//                             extent[1]<=position[1] && extent[3]>=position[1])) {
-//                map.getView().setCenter(position);
-// 			}
-//             let coordsTrk = track.getGeometry().getCoordinates(); // get coordinate array
-//             if ((coordsTrk.length == 0) || (coordsTrk[0][0] != position[0]) || (coordsTrk[0][1] != position[1]) ) {
-//                 coordsTrk.unshift( position );
-//                 if (coordsTrk.length > MAP_POINTS) coordsTrk.length = MAP_POINTS;
-//                 track.getGeometry().setCoordinates(coordsTrk);
-//                 dots.getGeometry().setCoordinates(coordsTrk);
-//             }
-//             point.getGeometry().setCoordinates(position);
-//             horizAcc.getGeometry().setRadius(radius);
-//             horizAcc.getGeometry().setCenter(position);
-//             plPosEll.getGeometry().setCoordinates( posEll );
-//             plVelEll.getGeometry().setCoordinates( velEll );
-//             speedVec.getGeometry().setCoordinates( velVect );
-//         }
-//     }
-// }
-// /*
-// function drawInstruments() {
-// 	const el = document.getElementById('tile_instruments');
-// 	const h = 200;     
-// 	const w = 200;
-// 	const r = ((h < w) ? h : w) / 2;
-// 	const c = { x:w/2, y:h/2 };
+function centerMap(lon, lat, cogt, gSpeed, hAcc, plPos, plVel) {
+    var el = document.getElementById('map');
+    if (el && (ol !== undefined) && !isNaN(lon) && !isNaN(lat)) {
+        el.removeAttribute('hidden');
+        let scale = Math.cos(lat * Math.PI / 180.0 );
+        let position = ol.proj.fromLonLat([Number(lon), Number(lat)]);
+        let radius = !isNaN(hAcc) ? scale * hAcc : 0;
+        plPos.major *= scale; 
+        plPos.minor *= scale;
+        let posEll = plPos ? makeEllipse(position, plPos.major, plPos.minor, plPos.angle) : [];
+        let velEll = [];
+        let velVect = [];
+        if (!isNaN(cogt) && !isNaN(gSpeed)) {
+            plVel.major *= scale; 
+            plVel.minorV *= scale;
+            plVel.gSpeed *= scale;
+            cogt *= Math.PI / 180.0;
+            const positionV = [ position[0] + Math.sin(cogt) * gSpeed, 
+                                position[1] + Math.cos(cogt) * gSpeed];
+            velEll = plVel ? makeEllipse(positionV, plVel.major, plVel.minor, plVel.angle) : [];
+            velVect = [ position, positionV ];
+        }
+        if (!map && el.clientWidth && el.clientHeight) {
+			// track
+            track = new ol.Feature({ geometry: new ol.geom.LineString( [ position ] ) });
+            let stroke = new ol.style.Stroke({width: 2, color: toRGBa(COL_HERO, 0.8), lineCap:'round' });
+            track.setStyle( new ol.style.Style({ stroke: stroke }) );
+            dots = new ol.Feature({ geometry: new ol.geom.MultiPoint([ position ]) });
+            let vertices = new ol.style.Circle({ radius: 2, fill: new ol.style.Fill({ color: COL_HERO }), });
+            dots.setStyle( new ol.style.Style({ image: vertices }) );
+            // point
+            point = new ol.Feature(new ol.geom.Point(position));
+            let svg = feather.icons.crosshair.toSvg({ color: 'white', 'stroke-width': 2, width: 96, height: 96, });
+            let icon    = new ol.style.Icon({ color: COL_BLUE, scale: 0.25, src: 'data:image/svg+xml;utf8,' + svg,
+											  anchor: [0.5, 0.5], anchorXUnits: 'fraction', anchorYUnits: 'fraction', });
+            point.setStyle( new ol.style.Style( { image: icon } ) );
+			// ellispe
+            const ellStyle = new ol.style.Style( { 
+                stroke: new ol.style.Stroke({ color: COL_RED, width:1, lineCap:'round' }),
+                fill:   new ol.style.Fill(  { color: toRGBa(COL_RED, 0.3), }),
+            } );
+            horizAcc = new ol.Feature({ geometry: new ol.geom.Circle( position, radius)});
+            plPosEll = new ol.Feature({ geometry: new ol.geom.Polygon( posEll ) });
+            plVelEll = new ol.Feature({ geometry: new ol.geom.Polygon( velEll ) });
+            speedVec = new ol.Feature({ geometry: new ol.geom.LineString( velVect ) });
+            // put things together 
+            let tile    = new ol.layer.Tile(  { source: new ol.source.OSM() });
+            let vectPt  = new ol.layer.Vector({ source: new ol.source.Vector({ features: [ point ] }) });
+            let vectTrk = new ol.layer.Vector({ source: new ol.source.Vector({ features: [ track, dots ] }) });
+            let vectEll = new ol.layer.Vector({ source: new ol.source.Vector({ features: [ horizAcc, plPosEll, plVelEll, speedVec ] }), style: ellStyle });
+            let intr = ol.interaction.defaults.defaults({ onFocusOnly: true, mouseWheelZoom: false });
+            let ctrl = ol.control.defaults.defaults({ attribution: false, zoom: true, rotate: true, });
+            class mapToolbar extends ol.control.Control {
+                constructor(opt_options) {
+                    const options = opt_options || {};
+                    // useful unicode icons ◌◯☉⌖⬭⬬⬮⬯
+                    const btnPoint = document.createElement('div');
+                    btnPoint.className = 'overlay_button'
+                    btnPoint.innerHTML = feather.icons.crosshair.toSvg();
+                    btnPoint.title = "Current location marker";
+                    btnPoint.type = "button";
+                    const btnError = document.createElement('button');
+                    btnError.innerHTML = 'O';
+                    btnError.style.fontStyle = 'italic';
+                    btnError.style.fontWeight = '400';
+                    btnError.title = "Horizontal accuracy estimate\nand protection level ellipse";
+                    const btnTrack = document.createElement('button');
+                    btnTrack.innerHTML = '☡';
+                    btnTrack.title = "Ground track";
+                    btnTrack.type = "button";
+                    const element = document.createElement('div');
+                    element.className = 'overlay_ctrl ol-options ol-control';
+                    element.appendChild(btnPoint);
+                    element.appendChild(btnError);
+                    element.appendChild(btnTrack);
+                    super({
+                        element: element,
+                        target: options.target,
+                    });
+                    btnPoint.addEventListener('click', this.showHideLayers.bind(this, vectPt), false);
+                    btnTrack.addEventListener('click', this.showHideLayers.bind(this, vectTrk), false);
+                    btnError.addEventListener('click', this.showHideLayers.bind(this, vectEll), false);
+                }
+                showHideLayers(layer) { layer.setOpacity( (layer.getOpacity() == 0) ? 1 : 0 ); }
+            }
+            const overviewMap = new ol.control.OverviewMap({
+                collapseLabel: '\u00AB',
+                layers: [ new ol.layer.Tile(  { source: new ol.source.OSM() } )],
+                expandFactor: 4,
+                label: '\u00BB',
+                collapsed: true,
+                rotation: Math.PI / 6,
+            });
+            const scaleLine = new ol.control.ScaleLine({ units: 'metric', minWidth: 100, /*bar: true, steps: 4, text: true,*/ })
+            ctrl.extend([ new mapToolbar(), scaleLine, overviewMap, new ol.control.FullScreen() ]);
+            let view = new ol.View( {  center:position, zoom: 15, maxZoom: 27, });
+            let opt = { 
+                controls: ctrl, 
+                interactions: intr, 
+                layers: [ tile, vectEll, vectTrk, vectPt ], 
+                target: 'map', 
+                view: view };
+			map = new ol.Map(opt);
+            map.getView().on('change:resolution', function _onZoomed(event){
+                var zLevel = this.getZoom();     
+                if (zLevel >= 20 && overviewMap.getCollapsed()) {
+                    overviewMap.setCollapsed(false);
+                } else if (zLevel < 15 && !overviewMap.getCollapsed()) {
+                    overviewMap.setCollapsed(true);
+                } 
+            });
+		} else if (map) {
+            const extent = map.getView().calculateExtent(map.getSize());
+            if (!(extent && extent[0]<=position[0] && extent[2]>=position[0] &&
+                            extent[1]<=position[1] && extent[3]>=position[1])) {
+               map.getView().setCenter(position);
+			}
+            let coordsTrk = track.getGeometry().getCoordinates(); // get coordinate array
+            if ((coordsTrk.length == 0) || (coordsTrk[0][0] != position[0]) || (coordsTrk[0][1] != position[1]) ) {
+                coordsTrk.unshift( position );
+                if (coordsTrk.length > MAP_POINTS) coordsTrk.length = MAP_POINTS;
+                track.getGeometry().setCoordinates(coordsTrk);
+                dots.getGeometry().setCoordinates(coordsTrk);
+            }
+            point.getGeometry().setCoordinates(position);
+            horizAcc.getGeometry().setRadius(radius);
+            horizAcc.getGeometry().setCenter(position);
+            plPosEll.getGeometry().setCoordinates( posEll );
+            plVelEll.getGeometry().setCoordinates( velEll );
+            speedVec.getGeometry().setCoordinates( velVect );
+        }
+    }
+}
+/*
+function drawInstruments() {
+	const el = document.getElementById('tile_instruments');
+	const h = 200;     
+	const w = 200;
+	const r = ((h < w) ? h : w) / 2;
+	const c = { x:w/2, y:h/2 };
 	
-// 	// draw the compass
-// 	let a = 0;
-// 	let canvas = document.createElement('canvas');
-// 	canvas.width = 200; 
-// 	canvas.height = 200; 
-// 	let ctx = canvas.getContext('2d');
-// 	if (db.cogt.sta || db.cogt.cnt) {
-// 		a = db.cogt.val * Math.PI / 180.0;
-// 		const v = 0.9 * r; 
-// 		const as = v * Math.sin(a);
-// 		const ac = v * Math.cos(a);
-// 		ctx.font = '10px';
-// 		ctx.textAlign = 'center';
-// 		ctx.textBaseline = "middle"; 
-// 		ctx.fillText("N", c.x - as, c.y - ac);
-// 		ctx.fillText("E", c.x + ac, c.y - as);
-// 		ctx.fillText("S", c.x + as, c.y + ac);
-// 		ctx.fillText("W", c.x - ac, c.y + as);
-// 	}
-// 	DrawRose(a, 			    r * 0.80, r * 0.20);
-// 	DrawRose(a + Math.PI / 4.0, r * 0.60, r * 0.20);
-// 	el.appendChild(canvas);
-//     el.removeAttribute('hidden');
+	// draw the compass
+	let a = 0;
+	let canvas = document.createElement('canvas');
+	canvas.width = 200; 
+	canvas.height = 200; 
+	let ctx = canvas.getContext('2d');
+	if (db.cogt.sta || db.cogt.cnt) {
+		a = db.cogt.val * Math.PI / 180.0;
+		const v = 0.9 * r; 
+		const as = v * Math.sin(a);
+		const ac = v * Math.cos(a);
+		ctx.font = '10px';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = "middle"; 
+		ctx.fillText("N", c.x - as, c.y - ac);
+		ctx.fillText("E", c.x + ac, c.y - as);
+		ctx.fillText("S", c.x + as, c.y + ac);
+		ctx.fillText("W", c.x - ac, c.y + as);
+	}
+	DrawRose(a, 			    r * 0.80, r * 0.20);
+	DrawRose(a + Math.PI / 4.0, r * 0.60, r * 0.20);
+	el.appendChild(canvas);
+    el.removeAttribute('hidden');
 	
-// 	function DrawRose(a, r1, r2)
-// 	{
-// 		const r1s = r1 * Math.sin(a);
-// 		const r1c = r1 * Math.cos(a);
-// 		a += Math.PI / 4.0;
-// 		const r2s = r2 * Math.sin(a);
-// 		const r2c = r2 * Math.cos(a);
-// 		ctx.lineWidth = 2;
-// 		ctx.strokeStyle = "#808080";
-// 		ctx.fillStyle = "#808080"
-// 		ctx.beginPath();
-// 		ctx.moveTo(c.x + r1s, c.y + r1c);
-// 		ctx.lineTo(c.x + r2s, c.y + r2c);
-// 		ctx.lineTo(c.x - r2s, c.y - r2c);
-// 		ctx.lineTo(c.x - r1s, c.y - r1c);
-// 		ctx.stroke();
-// 		ctx.fill();
-// 		ctx.beginPath();
-// 		ctx.moveTo(c.x + r1c, c.y - r1s);
-// 		ctx.lineTo(c.x + r2c, c.y - r2s);
-// 		ctx.lineTo(c.x - r2c, c.y + r2s);
-// 		ctx.lineTo(c.x - r1c, c.y + r1s);
-// 		ctx.stroke();
-// 		ctx.fill();
-// 		ctx.fillStyle = "#ffffff"
-// 		ctx.beginPath();
-// 		ctx.moveTo(c.x + r1s, c.y + r1c);
-// 		ctx.lineTo(c.x - r2c, c.y + r2s);
-// 		ctx.lineTo(c.x + r2c, c.y - r2s);
-// 		ctx.lineTo(c.x - r1s, c.y - r1c);
-// 		ctx.stroke();
-// 		ctx.fill();
-// 		ctx.beginPath();
-// 		ctx.moveTo(c.x + r1c, c.y - r1s);
-// 		ctx.lineTo(c.x + r2s, c.y + r2c);
-// 		ctx.lineTo(c.x - r2s, c.y - r2c);
-// 		ctx.lineTo(c.x - r1c, c.y + r1s);
-// 		ctx.stroke();
-// 		ctx.fill();
-// 	}
-// }
-// */
-// var statLed = { } ;
-// function statusLed(led) {
-//     if (statLed.el === undefined) {
-//         statLed.el = document.getElementById('status_led');
-//     }
-//     if (statLed.el) {
-//         let className = statLed.el.className.baseVal.replace(/ led_\S+/, '');
-// 		statLed.el.className.baseVal = led ? className + ' led_' + led : className; 
-// 		if (statLed.timer) {
-//             clearTimeout(statLed.timer);
-//             statLed.timer = undefined;
-//         }
-//         if (led === 'data') {
-//             statLed.timer = setTimeout( statusLedClear, 200 );
-//         }
-// 		function statusLedClear() {
-// 			statLed.el.className.baseVal = className;
-// 			statLed.timer = undefined;
-// 			if (epoch.numMsg) 
-// 				dbPublish();
-// 		}
-//     }
-// }
+	function DrawRose(a, r1, r2)
+	{
+		const r1s = r1 * Math.sin(a);
+		const r1c = r1 * Math.cos(a);
+		a += Math.PI / 4.0;
+		const r2s = r2 * Math.sin(a);
+		const r2c = r2 * Math.cos(a);
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "#808080";
+		ctx.fillStyle = "#808080"
+		ctx.beginPath();
+		ctx.moveTo(c.x + r1s, c.y + r1c);
+		ctx.lineTo(c.x + r2s, c.y + r2c);
+		ctx.lineTo(c.x - r2s, c.y - r2c);
+		ctx.lineTo(c.x - r1s, c.y - r1c);
+		ctx.stroke();
+		ctx.fill();
+		ctx.beginPath();
+		ctx.moveTo(c.x + r1c, c.y - r1s);
+		ctx.lineTo(c.x + r2c, c.y - r2s);
+		ctx.lineTo(c.x - r2c, c.y + r2s);
+		ctx.lineTo(c.x - r1c, c.y + r1s);
+		ctx.stroke();
+		ctx.fill();
+		ctx.fillStyle = "#ffffff"
+		ctx.beginPath();
+		ctx.moveTo(c.x + r1s, c.y + r1c);
+		ctx.lineTo(c.x - r2c, c.y + r2s);
+		ctx.lineTo(c.x + r2c, c.y - r2s);
+		ctx.lineTo(c.x - r1s, c.y - r1c);
+		ctx.stroke();
+		ctx.fill();
+		ctx.beginPath();
+		ctx.moveTo(c.x + r1c, c.y - r1s);
+		ctx.lineTo(c.x + r2s, c.y + r2c);
+		ctx.lineTo(c.x - r2s, c.y - r2c);
+		ctx.lineTo(c.x - r1c, c.y + r1s);
+		ctx.stroke();
+		ctx.fill();
+	}
+}
+*/
+var statLed = { } ;
+function statusLed(led) {
+    if (statLed.el === undefined) {
+        statLed.el = document.getElementById('status_led');
+    }
+    if (statLed.el) {
+        let className = statLed.el.className.baseVal.replace(/ led_\S+/, '');
+		statLed.el.className.baseVal = led ? className + ' led_' + led : className; 
+		if (statLed.timer) {
+            clearTimeout(statLed.timer);
+            statLed.timer = undefined;
+        }
+        if (led === 'data') {
+            statLed.timer = setTimeout( statusLedClear, 200 );
+        }
+		function statusLedClear() {
+			statLed.el.className.baseVal = className;
+			statLed.timer = undefined;
+			if (epoch.numMsg) 
+				dbPublish();
+		}
+    }
+}
 
 
 
-// // ------------------------------------------------------------------------------------
-// return { updateStatus:updateStatus,
-//          tableEntry: tableEntry,
-//          resetGui: resetGui,
-// 		 statusLed: statusLed,
-// };
-// })();
-// // ------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
+return { updateStatus:updateStatus,
+         tableEntry: tableEntry,
+         resetGui: resetGui,
+		 statusLed: statusLed,
+};
+})();
+// ------------------------------------------------------------------------------------
 
-// const SEPARATOR      = '  |  ';
-// const COL_PPT   = { hero:'#ff6e59',   black:'#1a1a1a',
-//                     red:'#a02846',    yellow:'#ffbe28', blue:'#4664b4',   green:'#3cb46e',
-//                     dkgray:'#5a5a5a', gray:'#9a9a9a',   ltgray:'#bebebe', sltgray:'#dcdcdc', };
-// const COL_WEB   = { hero:'#ff6e59',   text:'#1a1a1a',   white:'#ffffff',  bgnd:'#f7f7f7',
-//                     red:'#ffbbba',    yellow:'#fff4b5', blue:'#afc3e6',   green:'#bbf0d0',
-//                     black:'#1a1a1a',  dkgray:'#5a5a5a', gray:'#9a9a9a',   ltgray:'#bebebe', };
-// const COL_HERO  = COL_PPT.hero;
-// const COL_BLUE  = COL_PPT.blue;
-// const COL_GREEN = COL_PPT.green;
-// const COL_RED   = COL_PPT.red;
-// function toRGBa(hex, alpha) {
-//     var r = parseInt(hex.slice(1, 3), 16),
-//         g = parseInt(hex.slice(3, 5), 16),
-//         b = parseInt(hex.slice(5, 7), 16);
-//     if (alpha) {
-//         return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
-//     } else {
-//         return "rgb(" + r + ", " + g + ", " + b + ")";
-//     }
-// }
+const SEPARATOR      = '  |  ';
+const COL_PPT   = { hero:'#ff6e59',   black:'#1a1a1a',
+                    red:'#a02846',    yellow:'#ffbe28', blue:'#4664b4',   green:'#3cb46e',
+                    dkgray:'#5a5a5a', gray:'#9a9a9a',   ltgray:'#bebebe', sltgray:'#dcdcdc', };
+const COL_WEB   = { hero:'#ff6e59',   text:'#1a1a1a',   white:'#ffffff',  bgnd:'#f7f7f7',
+                    red:'#ffbbba',    yellow:'#fff4b5', blue:'#afc3e6',   green:'#bbf0d0',
+                    black:'#1a1a1a',  dkgray:'#5a5a5a', gray:'#9a9a9a',   ltgray:'#bebebe', };
+const COL_HERO  = COL_PPT.hero;
+const COL_BLUE  = COL_PPT.blue;
+const COL_GREEN = COL_PPT.green;
+const COL_RED   = COL_PPT.red;
+function toRGBa(hex, alpha) {
+    var r = parseInt(hex.slice(1, 3), 16),
+        g = parseInt(hex.slice(3, 5), 16),
+        b = parseInt(hex.slice(5, 7), 16);
+    if (alpha) {
+        return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+    } else {
+        return "rgb(" + r + ", " + g + ", " + b + ")";
+    }
+}
 
-// // Editor
-// // ------------------------------------------------------------------------------------
-// function editorInit(id) {
-//     let view = id+'_editor';
-//     var el = document.getElementById(view);
-//     var editor;
-//     try {
-//         editor = (el && (ace !== undefined)) ? ace.edit(view) : undefined;
-//     } catch (e) {}
-//     if (editor) {
-//         editor.setTheme('ace/theme/xcode');
-//         editor.session.setMode('ace/mode/javascript');
-//         editor.setOptions({fontSize: '12pt'});
-//         const Http = new XMLHttpRequest();
-//         Http.onreadystatechange = function _loadOptions(e){
-//             if (this.readyState === 4 && this.status === 200) {
-//                 var el = document.getElementById(id+'_template');
-//                 if(el) {
-//                     el.addEventListener('change', function(e){ _editorLoadTemplate(MOD_DIR + id + '/' + e.srcElement.value,editor); } );
-//                     el.innerHTML = this.responseText;
-//                     _editorLoadTemplate(MOD_DIR + id + '/' + el.value, editor);
-//                 }
-//             }
-//         }
-//         Http.open('GET',MOD_DIR + id + '/index.xml', true);
-//         Http.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-//         Http.send();
-//     }
-//     return editor;
+// Editor
+// ------------------------------------------------------------------------------------
+function editorInit(id) {
+    let view = id+'_editor';
+    var el = document.getElementById(view);
+    var editor;
+    try {
+        editor = (el && (ace !== undefined)) ? ace.edit(view) : undefined;
+    } catch (e) {}
+    if (editor) {
+        editor.setTheme('ace/theme/xcode');
+        editor.session.setMode('ace/mode/javascript');
+        editor.setOptions({fontSize: '12pt'});
+        const Http = new XMLHttpRequest();
+        Http.onreadystatechange = function _loadOptions(e){
+            if (this.readyState === 4 && this.status === 200) {
+                var el = document.getElementById(id+'_template');
+                if(el) {
+                    el.addEventListener('change', function(e){ _editorLoadTemplate(MOD_DIR + id + '/' + e.srcElement.value,editor); } );
+                    el.innerHTML = this.responseText;
+                    _editorLoadTemplate(MOD_DIR + id + '/' + el.value, editor);
+                }
+            }
+        }
+        Http.open('GET',MOD_DIR + id + '/index.xml', true);
+        Http.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        Http.send();
+    }
+    return editor;
     
-//     function _editorLoadTemplate(url,editor) {
-//         const Http = new XMLHttpRequest();
-//         Http.onreadystatechange = function _loadTemplate(e){
-//             if(this.readyState === 4 && this.status === 200) {
-//                 editor.getSession().setValue(this.responseText);
-//                 const format = url.match(/\.py$/) ? 'ace/mode/python' :
-//                                                     'ace/mode/javascript';
-//                 editor.session.setMode( format );
-//             }
-//         }
-//         Http.open('GET', url, true);
-//         Http.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-//         Http.send();
-//     }
-// }
+    function _editorLoadTemplate(url,editor) {
+        const Http = new XMLHttpRequest();
+        Http.onreadystatechange = function _loadTemplate(e){
+            if(this.readyState === 4 && this.status === 200) {
+                editor.getSession().setValue(this.responseText);
+                const format = url.match(/\.py$/) ? 'ace/mode/python' :
+                                                    'ace/mode/javascript';
+                editor.session.setMode( format );
+            }
+        }
+        Http.open('GET', url, true);
+        Http.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        Http.send();
+    }
+}
