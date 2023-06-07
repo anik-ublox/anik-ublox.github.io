@@ -518,482 +518,482 @@ function dbBase(opt) {
     }
 }
 
-function dbY(opt) {
-    dbBase.call(this, opt);
-    // attach / extend the api
-    this.publish = function(param) {
-        let len = this.array.length;
-        let clen = this.carray.length;
-        if ((0 === len) || this.grow) {
-            if (this.len === len)
-                this.array.shift();
-            else len ++;
-            this.array.push(this.nan);
-            this.grow = false;
+// function dbY(opt) {
+//     dbBase.call(this, opt);
+//     // attach / extend the api
+//     this.publish = function(param) {
+//         let len = this.array.length;
+//         let clen = this.carray.length;
+//         if ((0 === len) || this.grow) {
+//             if (this.len === len)
+//                 this.array.shift();
+//             else len ++;
+//             this.array.push(this.nan);
+//             this.grow = false;
             
-            if (CHART_POINTS === clen)
-                this.carray.shift();
-            else clen ++;
-            this.carray.push(this.nan);
-        }
-        if (this.dirty) {
-            this.array[len-1] = this.sta ? this.val : this.nan;
-            this.carray[clen-1] = this.sta ? this.val : this.nan;
-            this.onpublish(param);
-            this.dirty = false;
-        }
-    }
-    this.update = function() {
-        this.calc();
-        this.grow = true;
-        this.dirty = true;
-    }
-    this.store = function(sta, val) {
-        this.dirty = true;
-        this.val = val;
-        this.sta = sta;
-    }
-}
+//             if (CHART_POINTS === clen)
+//                 this.carray.shift();
+//             else clen ++;
+//             this.carray.push(this.nan);
+//         }
+//         if (this.dirty) {
+//             this.array[len-1] = this.sta ? this.val : this.nan;
+//             this.carray[clen-1] = this.sta ? this.val : this.nan;
+//             this.onpublish(param);
+//             this.dirty = false;
+//         }
+//     }
+//     this.update = function() {
+//         this.calc();
+//         this.grow = true;
+//         this.dirty = true;
+//     }
+//     this.store = function(sta, val) {
+//         this.dirty = true;
+//         this.val = val;
+//         this.sta = sta;
+//     }
+// }
 
-function dbTY(opt) {
-    dbBase.call(this, opt);
-    // attach / extend the api
-    this.store = function (sta, val) {
-        if (sta) {
-            let ttag = new Date;
-            this.ttag = ttag;
-            this.val = val;
-            this.sta = sta;
-            if (this.len === this.array.length)
-                this.array.shift();
-            this.array.push( [ttag, val] );
-            if (CHART_POINTS === this.carray.length)
-                this.carray.shift();
-            this.carray.push( [ttag, val] );
-            this.onpublish();
-            this.calc();
-        }
-    }
-}
+// function dbTY(opt) {
+//     dbBase.call(this, opt);
+//     // attach / extend the api
+//     this.store = function (sta, val) {
+//         if (sta) {
+//             let ttag = new Date;
+//             this.ttag = ttag;
+//             this.val = val;
+//             this.sta = sta;
+//             if (this.len === this.array.length)
+//                 this.array.shift();
+//             this.array.push( [ttag, val] );
+//             if (CHART_POINTS === this.carray.length)
+//                 this.carray.shift();
+//             this.carray.push( [ttag, val] );
+//             this.onpublish();
+//             this.calc();
+//         }
+//     }
+// }
 
-function formatDate(ttag) {
-    return [1900+ttag.getYear(), _pad(1+ttag.getMonth(),2), _pad(ttag.getDate(),2)].join('-') + ' ' +
-           [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
-           _pad(ttag.getMilliseconds(),3);
-    function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
-}
+// function formatDate(ttag) {
+//     return [1900+ttag.getYear(), _pad(1+ttag.getMonth(),2), _pad(ttag.getDate(),2)].join('-') + ' ' +
+//            [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
+//            _pad(ttag.getMilliseconds(),3);
+//     function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
+// }
 
-function formatTime(ttag) {
-    return [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
-           _pad(ttag.getMilliseconds(),3);
-    function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
-}
+// function formatTime(ttag) {
+//     return [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
+//            _pad(ttag.getMilliseconds(),3);
+//     function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
+// }
 
-function dbInit(){
-	let el = document.getElementById('db_clear');
-	if (el) el.addEventListener('click', dbClear);
-	el = document.getElementById('db_save');
-	if (el) el.addEventListener('click', dbSave);
-	el = document.getElementById('db_kml');
-    if (el) el.addEventListener('click', dbSaveKml);
-    for (let name in db) {
-        db[name].timebase = db.time.carray;
-        if (db[name].hide !== true) {
-            db[name].onpublish = dbOnPublish;
-        }
-        db[name].onclear = dbOnClear;
-    }
-    for (let name in dbInt) {
-        dbInt[name].timebase = dbInt.time.carray;
-        if (dbInt[name].hide !== true) {
-            dbInt[name].onpublish = dbOnPublish
-        } 
-        dbInt[name].onclear = dbOnClear;
-    }
-    setInterval( function _oneSecondInterval() {
-        // a one second maintainance timer
-        let date = new Date();
-        dbInt.time.set(formatTime(date));
-        if (USTART.timeConnected !== undefined) {
-            let diff = date - USTART.timeConnected;
-            diff += date.getTimezoneOffset() * 60000;
-            diff = new Date(diff);
-            dbInt.uptime.set(formatTime(diff));
-        }
-        dbInt.bytesTx.set(intStats.bytesTx);
-        dbInt.msgTx.set(intStats.msgTx);
-        dbInt.bytesRx.set(intStats.bytesRx + intStats.bytesPend);
-        dbInt.msgRx.set(intStats.msgRx);
-        intStats.bytesTx = 0;
-        intStats.bytesRx = 0;
-        intStats.msgTx = 0;
-        intStats.msgRx = 0;
-        intStats.bytesPend = 0;
+// function dbInit(){
+// 	let el = document.getElementById('db_clear');
+// 	if (el) el.addEventListener('click', dbClear);
+// 	el = document.getElementById('db_save');
+// 	if (el) el.addEventListener('click', dbSave);
+// 	el = document.getElementById('db_kml');
+//     if (el) el.addEventListener('click', dbSaveKml);
+//     for (let name in db) {
+//         db[name].timebase = db.time.carray;
+//         if (db[name].hide !== true) {
+//             db[name].onpublish = dbOnPublish;
+//         }
+//         db[name].onclear = dbOnClear;
+//     }
+//     for (let name in dbInt) {
+//         dbInt[name].timebase = dbInt.time.carray;
+//         if (dbInt[name].hide !== true) {
+//             dbInt[name].onpublish = dbOnPublish
+//         } 
+//         dbInt[name].onclear = dbOnClear;
+//     }
+//     setInterval( function _oneSecondInterval() {
+//         // a one second maintainance timer
+//         let date = new Date();
+//         dbInt.time.set(formatTime(date));
+//         if (USTART.timeConnected !== undefined) {
+//             let diff = date - USTART.timeConnected;
+//             diff += date.getTimezoneOffset() * 60000;
+//             diff = new Date(diff);
+//             dbInt.uptime.set(formatTime(diff));
+//         }
+//         dbInt.bytesTx.set(intStats.bytesTx);
+//         dbInt.msgTx.set(intStats.msgTx);
+//         dbInt.bytesRx.set(intStats.bytesRx + intStats.bytesPend);
+//         dbInt.msgRx.set(intStats.msgRx);
+//         intStats.bytesTx = 0;
+//         intStats.bytesRx = 0;
+//         intStats.msgTx = 0;
+//         intStats.msgRx = 0;
+//         intStats.bytesPend = 0;
         
-        let el = document.getElementById('dbInt');
-        for (let name in dbInt) {
-            const e = dbInt[name];
-            e.publish(el)
-            if (e.el) el = e.el.info ? e.el.info : e.el.row;
-        }
-        for (let name in dbInt) {
-            dbInt[name].update(el)
-        }
-    }, 1000);
-}
+//         let el = document.getElementById('dbInt');
+//         for (let name in dbInt) {
+//             const e = dbInt[name];
+//             e.publish(el)
+//             if (e.el) el = e.el.info ? e.el.info : e.el.row;
+//         }
+//         for (let name in dbInt) {
+//             dbInt[name].update(el)
+//         }
+//     }, 1000);
+// }
 
-function dbSave(e) {
-	e.preventDefault();
-    const sep = (Array.toLocaleString) ? ['a','b'].toLocaleString().charAt(1) : ';';
-	let text = '';
-	let cols = { };
-    let len = 0;
-    for (let name in db) {
-        const e = db[name];
-		if (e.sta | e.cnt) {
-            const values = e.values();
-            len = Math.max(len, values.length);
-			let object = { id:name, name:e.name, unit:e.unit };
-            cols[name] = Object.assign( object, e.stats(), values );
-        }
-    }
-	function _row(item) {
-		let line = item;
-		for (let name in cols) {
-			line += sep + ((undefined !== cols[name][item]) ? cols[name][item] : '');
-		}
-		line += '\r\n';
-		return line;
-	}
-	text += _row('name');
-	text += _row('id');
-	text += _row('unit');
-	text += _row('sta');
-	text += _row('cnt');
-	text += _row('cur');
-	text += _row('min');
-	text += _row('max');
-	text += _row('avg');
-	text += _row('dev');
-	for (let r = 0; r < len; r ++) {
-		text += _row(r);
-	}
-	const blob = new Blob( [ text ], {type:'text/plain'});
-	const link = window.URL.createObjectURL(blob);
-	const tempLink = document.createElement('a');
-	tempLink.download  = 'Exported.csv';
-	tempLink.innerHTML = 'Download CSV File';
-	tempLink.href      = link;
-	tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
-	tempLink.setAttribute('hidden','');
-	document.body.appendChild(tempLink);
-	tempLink.click();
-}
+// function dbSave(e) {
+// 	e.preventDefault();
+//     const sep = (Array.toLocaleString) ? ['a','b'].toLocaleString().charAt(1) : ';';
+// 	let text = '';
+// 	let cols = { };
+//     let len = 0;
+//     for (let name in db) {
+//         const e = db[name];
+// 		if (e.sta | e.cnt) {
+//             const values = e.values();
+//             len = Math.max(len, values.length);
+// 			let object = { id:name, name:e.name, unit:e.unit };
+//             cols[name] = Object.assign( object, e.stats(), values );
+//         }
+//     }
+// 	function _row(item) {
+// 		let line = item;
+// 		for (let name in cols) {
+// 			line += sep + ((undefined !== cols[name][item]) ? cols[name][item] : '');
+// 		}
+// 		line += '\r\n';
+// 		return line;
+// 	}
+// 	text += _row('name');
+// 	text += _row('id');
+// 	text += _row('unit');
+// 	text += _row('sta');
+// 	text += _row('cnt');
+// 	text += _row('cur');
+// 	text += _row('min');
+// 	text += _row('max');
+// 	text += _row('avg');
+// 	text += _row('dev');
+// 	for (let r = 0; r < len; r ++) {
+// 		text += _row(r);
+// 	}
+// 	const blob = new Blob( [ text ], {type:'text/plain'});
+// 	const link = window.URL.createObjectURL(blob);
+// 	const tempLink = document.createElement('a');
+// 	tempLink.download  = 'Exported.csv';
+// 	tempLink.innerHTML = 'Download CSV File';
+// 	tempLink.href      = link;
+// 	tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
+// 	tempLink.setAttribute('hidden','');
+// 	document.body.appendChild(tempLink);
+// 	tempLink.click();
+// }
 
-function dbSaveKml(e) {
-    const coords = [];
-    const coordsto = [];
-    for (let r = 0; r < db.time.array.length; r ++) {
-		const lon = db.long.array[r];
-		const lat = db.lat.array[r];
-		const msl = db.msl.array[r];
-		if (!isNaN(lon) && !isNaN(lat) && !isNaN(msl)) {
-			coords.push( [ lon, lat, msl ].join() );
-			const vE = !isNaN(db.velE.array[r]) ? db.velE.array[r] : 0;
-			const vN = !isNaN(db.velN.array[r]) ? db.velN.array[r] : 0;
-			const vD = !isNaN(db.velD.array[r]) ? db.velD.array[r] : 0;
-			coordsto.push( [ lon + vE / (111199.0 * Math.cos(lat * Math.PI / 180.0)), 
-							 lat + vN /  111199.0, msl - vD].join() );
-		}
-	}
-	//             aabbggrr
-	const col   = 'ff596eff';
-	const collt = 'cc596eff';
-    let kml = '\
-<?xml version="1.0" encoding="UTF-8"?>\r\n\
-<kml xmlns="http://www.opengis.net/kml/2.2">\r\n\
-<Document>\r\n\
-	<name>GNSS Log</name>\r\n\
-	<description>Created with ' + window.location.origin + '</description>\r\n\
-	<open>1</open>\r\n\
-	<StyleMap id="style">\r\n\
-		<Pair>\r\n\
-			<key>normal</key>\r\n\
-			<Style>\r\n\
-				<IconStyle>\r\n\
-					<color>'+col+'</color>\r\n\
-					<scale>0.21</scale>\r\n\
-					<Icon>\r\n\
-						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
-					</Icon>\r\n\
-					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
-				</IconStyle>\r\n\
-				<LabelStyle>\r\n\
-					<scale>0</scale>\r\n\
-				</LabelStyle>\r\n\
-			</Style>\r\n\
-		</Pair>\r\n\
-		<Pair>\r\n\
-			<key>highlight</key>\r\n\
-			<Style>\r\n\
-				<IconStyle>\r\n\
-					<color>'+col+'</color>\r\n\
-					<scale>0.3</scale>\r\n\
-					<Icon>\r\n\
-						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
-					</Icon>\r\n\
-					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
-				</IconStyle>\r\n\
-			</Style>\r\n\
-		</Pair>\r\n\
-	</StyleMap>\r\n\
-	<Folder>\r\n\
-		<name>Positions</name>\r\n';
-	for (let i = 0; i < coords.length; i ++) {
-		kml += '\
-		<Placemark>\r\n\
-			<name>Index '+i+'</name>\r\n\
-			<description>Description '+i+'\r\n'+coords[i]+'</description>\r\n\
-			<styleUrl>#style</styleUrl>\r\n\
-			<Point>\r\n\
-				<coordinates>'+coords[i]+'</coordinates>\r\n\
-			</Point>\r\n\
-		</Placemark>\r\n';
-	}
-	kml += '\
-	</Folder>\r\n\
-	<Placemark>\r\n\
-		<name>Track</name>\r\n\
-		<Style>\r\n\
-			<LineStyle>\r\n\
-				<color>'+col+'</color>\r\n\
-				<width>1</width>\r\n\
-			</LineStyle>\r\n\
-		</Style>\r\n\
-		<LineString>\r\n\
-			<coordinates>' + coords.join(' ') + '</coordinates>\r\n\
-		</LineString>\r\n\
-	</Placemark>\r\n';
-	kml += '\
-	<Placemark>\r\n\
-		<name>Speed Vectors</name>\r\n\
-		<Style>\r\n\
-			<LineStyle>\r\n\
-				<color>'+collt+'</color>\r\n\
-				<width>3</width>\r\n\
-			</LineStyle>\r\n\
-		</Style>\r\n\
-		<MultiGeometry>\r\n';
-	for (let i = 0; i < coords.length; i ++) {
-		kml += '\
-			<LineString>\r\n\
-				<coordinates>' + coords[i] + ' ' + coordsto[i] + '</coordinates>\r\n\
-			</LineString>\r\n';
-	}	
-	kml += '\
-		</MultiGeometry>\r\n\
-	</Placemark>\r\n\
-</Document>\r\n\
-</kml>';
-    const blob = new Blob( [ kml ], {type:'application/vnd.google-earth.kml+xml'});
-    const link = window.URL.createObjectURL(blob);
-    const tempLink = document.createElement('a');
-    tempLink.download  = 'Exported.kml';
-    tempLink.innerHTML = 'Download KML File';
-    tempLink.href      = link;
-    tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
-    tempLink.setAttribute('hidden','');
-    document.body.appendChild(tempLink);
-    tempLink.click();
-}
+// function dbSaveKml(e) {
+//     const coords = [];
+//     const coordsto = [];
+//     for (let r = 0; r < db.time.array.length; r ++) {
+// 		const lon = db.long.array[r];
+// 		const lat = db.lat.array[r];
+// 		const msl = db.msl.array[r];
+// 		if (!isNaN(lon) && !isNaN(lat) && !isNaN(msl)) {
+// 			coords.push( [ lon, lat, msl ].join() );
+// 			const vE = !isNaN(db.velE.array[r]) ? db.velE.array[r] : 0;
+// 			const vN = !isNaN(db.velN.array[r]) ? db.velN.array[r] : 0;
+// 			const vD = !isNaN(db.velD.array[r]) ? db.velD.array[r] : 0;
+// 			coordsto.push( [ lon + vE / (111199.0 * Math.cos(lat * Math.PI / 180.0)), 
+// 							 lat + vN /  111199.0, msl - vD].join() );
+// 		}
+// 	}
+// 	//             aabbggrr
+// 	const col   = 'ff596eff';
+// 	const collt = 'cc596eff';
+//     let kml = '\
+// <?xml version="1.0" encoding="UTF-8"?>\r\n\
+// <kml xmlns="http://www.opengis.net/kml/2.2">\r\n\
+// <Document>\r\n\
+// 	<name>GNSS Log</name>\r\n\
+// 	<description>Created with ' + window.location.origin + '</description>\r\n\
+// 	<open>1</open>\r\n\
+// 	<StyleMap id="style">\r\n\
+// 		<Pair>\r\n\
+// 			<key>normal</key>\r\n\
+// 			<Style>\r\n\
+// 				<IconStyle>\r\n\
+// 					<color>'+col+'</color>\r\n\
+// 					<scale>0.21</scale>\r\n\
+// 					<Icon>\r\n\
+// 						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
+// 					</Icon>\r\n\
+// 					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
+// 				</IconStyle>\r\n\
+// 				<LabelStyle>\r\n\
+// 					<scale>0</scale>\r\n\
+// 				</LabelStyle>\r\n\
+// 			</Style>\r\n\
+// 		</Pair>\r\n\
+// 		<Pair>\r\n\
+// 			<key>highlight</key>\r\n\
+// 			<Style>\r\n\
+// 				<IconStyle>\r\n\
+// 					<color>'+col+'</color>\r\n\
+// 					<scale>0.3</scale>\r\n\
+// 					<Icon>\r\n\
+// 						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
+// 					</Icon>\r\n\
+// 					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
+// 				</IconStyle>\r\n\
+// 			</Style>\r\n\
+// 		</Pair>\r\n\
+// 	</StyleMap>\r\n\
+// 	<Folder>\r\n\
+// 		<name>Positions</name>\r\n';
+// 	for (let i = 0; i < coords.length; i ++) {
+// 		kml += '\
+// 		<Placemark>\r\n\
+// 			<name>Index '+i+'</name>\r\n\
+// 			<description>Description '+i+'\r\n'+coords[i]+'</description>\r\n\
+// 			<styleUrl>#style</styleUrl>\r\n\
+// 			<Point>\r\n\
+// 				<coordinates>'+coords[i]+'</coordinates>\r\n\
+// 			</Point>\r\n\
+// 		</Placemark>\r\n';
+// 	}
+// 	kml += '\
+// 	</Folder>\r\n\
+// 	<Placemark>\r\n\
+// 		<name>Track</name>\r\n\
+// 		<Style>\r\n\
+// 			<LineStyle>\r\n\
+// 				<color>'+col+'</color>\r\n\
+// 				<width>1</width>\r\n\
+// 			</LineStyle>\r\n\
+// 		</Style>\r\n\
+// 		<LineString>\r\n\
+// 			<coordinates>' + coords.join(' ') + '</coordinates>\r\n\
+// 		</LineString>\r\n\
+// 	</Placemark>\r\n';
+// 	kml += '\
+// 	<Placemark>\r\n\
+// 		<name>Speed Vectors</name>\r\n\
+// 		<Style>\r\n\
+// 			<LineStyle>\r\n\
+// 				<color>'+collt+'</color>\r\n\
+// 				<width>3</width>\r\n\
+// 			</LineStyle>\r\n\
+// 		</Style>\r\n\
+// 		<MultiGeometry>\r\n';
+// 	for (let i = 0; i < coords.length; i ++) {
+// 		kml += '\
+// 			<LineString>\r\n\
+// 				<coordinates>' + coords[i] + ' ' + coordsto[i] + '</coordinates>\r\n\
+// 			</LineString>\r\n';
+// 	}	
+// 	kml += '\
+// 		</MultiGeometry>\r\n\
+// 	</Placemark>\r\n\
+// </Document>\r\n\
+// </kml>';
+//     const blob = new Blob( [ kml ], {type:'application/vnd.google-earth.kml+xml'});
+//     const link = window.URL.createObjectURL(blob);
+//     const tempLink = document.createElement('a');
+//     tempLink.download  = 'Exported.kml';
+//     tempLink.innerHTML = 'Download KML File';
+//     tempLink.href      = link;
+//     tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
+//     tempLink.setAttribute('hidden','');
+//     document.body.appendChild(tempLink);
+//     tempLink.click();
+// }
 
-function dbClear(e) {
-    if (e) e.preventDefault();
-    epoch.ids = {};
-    epoch.data = '';
-    epoch.numMsg = 0;
-    epoch.index = 0;
-    for (let name in db)
-        db[name].clear();
-    for (let name in dbInt)
-        dbInt[name].clear();
-    clearMapTrack(e);
-}
+// function dbClear(e) {
+//     if (e) e.preventDefault();
+//     epoch.ids = {};
+//     epoch.data = '';
+//     epoch.numMsg = 0;
+//     epoch.index = 0;
+//     for (let name in db)
+//         db[name].clear();
+//     for (let name in dbInt)
+//         dbInt[name].clear();
+//     clearMapTrack(e);
+// }
 
-function dbOnClear() {
-    // detach the gui
-    if (this.chart) {
-        this.chart.destroy();
-        this.chart = undefined;
-    }
-    if (this.el) {
-        if (this.el.row) this.el.row.parentNode.removeChild(this.el.row);
-        if (this.el.info) this.el.info.parentNode.removeChild(this.el.info);
-        this.el = undefined;
-    }
-}
-function dbOnPublish(el) {
-    if (this.sta | this.cnt) {
-        if (undefined === this.el) {
-            let tr = document.createElement('tr');
-            let td = document.createElement('td');
-            td.textContent = this.name;
-            if (this.descr) td.title = this.descr;
-            td.style.whiteSpace = 'nowrap';
-            tr.appendChild(td);
-            td = document.createElement('td');
-            td.className = 'right';
-            const hint = this.hint();
-            if (hint) td.title = hint;
-            this.el = { row: tr, value:td };
-            tr.appendChild(td);
-            td = document.createElement('td');
-            if (this.unit) td.textContent = this.unit;
-            if (this.map) this.el.comment = td;
-            tr.appendChild(td);
-            tr.dbEntry = this;
-            tr.removeAttribute('hidden');
-            tr.addEventListener('click', _onDatabaseRowClick);
-            el.parentNode.insertBefore(tr, el.nextSibling);     // only ok if we dont have a child open
-        }
-        if (this.el.value)   this.el.value.textContent = this.value();
-        if (this.el.comment) this.el.comment.textContent = this.comment();
-        if (this.el.stats) { // we have a details view open
-            let el = _makeTable(this.stats());
-            if (el) this.el.stats.innerHTML = el.innerHTML;
-        }
-        if (this.chart) this.chart.update(0);
-    }
+// function dbOnClear() {
+//     // detach the gui
+//     if (this.chart) {
+//         this.chart.destroy();
+//         this.chart = undefined;
+//     }
+//     if (this.el) {
+//         if (this.el.row) this.el.row.parentNode.removeChild(this.el.row);
+//         if (this.el.info) this.el.info.parentNode.removeChild(this.el.info);
+//         this.el = undefined;
+//     }
+// }
+// function dbOnPublish(el) {
+//     if (this.sta | this.cnt) {
+//         if (undefined === this.el) {
+//             let tr = document.createElement('tr');
+//             let td = document.createElement('td');
+//             td.textContent = this.name;
+//             if (this.descr) td.title = this.descr;
+//             td.style.whiteSpace = 'nowrap';
+//             tr.appendChild(td);
+//             td = document.createElement('td');
+//             td.className = 'right';
+//             const hint = this.hint();
+//             if (hint) td.title = hint;
+//             this.el = { row: tr, value:td };
+//             tr.appendChild(td);
+//             td = document.createElement('td');
+//             if (this.unit) td.textContent = this.unit;
+//             if (this.map) this.el.comment = td;
+//             tr.appendChild(td);
+//             tr.dbEntry = this;
+//             tr.removeAttribute('hidden');
+//             tr.addEventListener('click', _onDatabaseRowClick);
+//             el.parentNode.insertBefore(tr, el.nextSibling);     // only ok if we dont have a child open
+//         }
+//         if (this.el.value)   this.el.value.textContent = this.value();
+//         if (this.el.comment) this.el.comment.textContent = this.comment();
+//         if (this.el.stats) { // we have a details view open
+//             let el = _makeTable(this.stats());
+//             if (el) this.el.stats.innerHTML = el.innerHTML;
+//         }
+//         if (this.chart) this.chart.update(0);
+//     }
     
-    function _onDatabaseRowClick(e) {
-        if (this.dbEntry) {
-            const e = this.dbEntry;
-            if (e.el.info) {
-                if (e.chart) e.chart.destroy();
-                if (e.el.info) e.el.info.parentNode.removeChild(e.el.info); // remove me
-                e.el.info = undefined;
-                e.el.stats = undefined;
-                e.chart = undefined;
-            } else {
-                const tr = document.createElement('tr');
-                tr.dbEntry  = this.dbEntry;
-                tr.className = 'dbrow';
-                tr.addEventListener('click', _onDatabaseRowClick);
-                // the chart
-                let td2 = document.createElement('td');
-                td2.colSpan = 2;
-                let div = _makeChart(e, this.parentNode.width);
-                if (div) {
-                    td2.appendChild(div);
-                }
-                tr.appendChild(td2);
-                // the stats
-                let td = document.createElement('td');
-                td.colSpan = 1;
-                table = document.createElement('table');
-                const stats = e.stats();
-                if (stats) {
-                    table = _makeTable(stats);
-                    if (table) {
-                        e.el.stats = table;
-                        td.appendChild(table);
-                    }
-                }
-                tr.appendChild(td);
-                // innner
-                 e.el.info = this.parentNode.insertBefore(tr, this.nextSibling);
-            }
-        }
-    }
+//     function _onDatabaseRowClick(e) {
+//         if (this.dbEntry) {
+//             const e = this.dbEntry;
+//             if (e.el.info) {
+//                 if (e.chart) e.chart.destroy();
+//                 if (e.el.info) e.el.info.parentNode.removeChild(e.el.info); // remove me
+//                 e.el.info = undefined;
+//                 e.el.stats = undefined;
+//                 e.chart = undefined;
+//             } else {
+//                 const tr = document.createElement('tr');
+//                 tr.dbEntry  = this.dbEntry;
+//                 tr.className = 'dbrow';
+//                 tr.addEventListener('click', _onDatabaseRowClick);
+//                 // the chart
+//                 let td2 = document.createElement('td');
+//                 td2.colSpan = 2;
+//                 let div = _makeChart(e, this.parentNode.width);
+//                 if (div) {
+//                     td2.appendChild(div);
+//                 }
+//                 tr.appendChild(td2);
+//                 // the stats
+//                 let td = document.createElement('td');
+//                 td.colSpan = 1;
+//                 table = document.createElement('table');
+//                 const stats = e.stats();
+//                 if (stats) {
+//                     table = _makeTable(stats);
+//                     if (table) {
+//                         e.el.stats = table;
+//                         td.appendChild(table);
+//                     }
+//                 }
+//                 tr.appendChild(td);
+//                 // innner
+//                  e.el.info = this.parentNode.insertBefore(tr, this.nextSibling);
+//             }
+//         }
+//     }
     
-    function _makeTable(stats) {
-        let dump = '';
-        dump += '<tr style="border-top-width:0;"><td colspan="2" style="padding-top:1em;"><b>Statistics<b></td></tr>';
-        if (undefined !== stats.cur) dump += '<tr><td>Latest</td><td class="right">' + stats.cur + '</td></tr>';
-        if (undefined !== stats.min) dump += '<tr><td>Minimum</td><td class="right">' + stats.min + '</td></tr>';
-        if (undefined !== stats.max) dump += '<tr><td>Maximum</td><td class="right">' + stats.max + '</td></tr>';
-        if (undefined !== stats.avg) dump += '<tr><td>Average</td><td class="right">' + stats.avg + '</td></tr>';
-        if (undefined !== stats.dev) dump += '<tr><td title="Standard Deviation">Std. Dev.</td><td class="right">' + stats.dev + '</td></tr>';
-        dump += '<tr><td>Count</td><td class="right">' + stats.cnt + '</td></tr>';
-    //    if (stat.unit)   dump += '<tr><td>Unit</td><td class="right">'+stats.unit+'</td></tr>';
-        dump += '<tr><td colspan="2" style="padding-top:1em;"><b>Source</b></td></tr>';
-        if (undefined !== stats.msg) {
-            let m = stats.msg.match(/^(\w+)\s+(.*)/);
-            if (m != undefined && m.length == 3) {
-                dump += '<tr><td>Protocol</td><td class="right">' + m[1] + '</td></tr>';
-                dump += '<tr><td>Message</td><td class="right">' + m[2] + '</td></tr>';
-            }
-        }
-        if (undefined != stats.time) dump += '<tr><td>Time</td><td class="right">' + stats.time + '</td></tr>';
-        if (undefined !== stats.age) {
-            const age = (stats.age > 1) ? stats.age + '  s Ago' : (stats.age === 1) ? 'Last Epoch' : 'Just Now';
-            dump += '<tr><td>Updated</td><td class="right">' + age + '</td></tr>';
-        }
-        let table = document.createElement('table');
-        table.className = "dbtable";
-        table.innerHTML = dump;
-        return table;
-    }
+//     function _makeTable(stats) {
+//         let dump = '';
+//         dump += '<tr style="border-top-width:0;"><td colspan="2" style="padding-top:1em;"><b>Statistics<b></td></tr>';
+//         if (undefined !== stats.cur) dump += '<tr><td>Latest</td><td class="right">' + stats.cur + '</td></tr>';
+//         if (undefined !== stats.min) dump += '<tr><td>Minimum</td><td class="right">' + stats.min + '</td></tr>';
+//         if (undefined !== stats.max) dump += '<tr><td>Maximum</td><td class="right">' + stats.max + '</td></tr>';
+//         if (undefined !== stats.avg) dump += '<tr><td>Average</td><td class="right">' + stats.avg + '</td></tr>';
+//         if (undefined !== stats.dev) dump += '<tr><td title="Standard Deviation">Std. Dev.</td><td class="right">' + stats.dev + '</td></tr>';
+//         dump += '<tr><td>Count</td><td class="right">' + stats.cnt + '</td></tr>';
+//     //    if (stat.unit)   dump += '<tr><td>Unit</td><td class="right">'+stats.unit+'</td></tr>';
+//         dump += '<tr><td colspan="2" style="padding-top:1em;"><b>Source</b></td></tr>';
+//         if (undefined !== stats.msg) {
+//             let m = stats.msg.match(/^(\w+)\s+(.*)/);
+//             if (m != undefined && m.length == 3) {
+//                 dump += '<tr><td>Protocol</td><td class="right">' + m[1] + '</td></tr>';
+//                 dump += '<tr><td>Message</td><td class="right">' + m[2] + '</td></tr>';
+//             }
+//         }
+//         if (undefined != stats.time) dump += '<tr><td>Time</td><td class="right">' + stats.time + '</td></tr>';
+//         if (undefined !== stats.age) {
+//             const age = (stats.age > 1) ? stats.age + '  s Ago' : (stats.age === 1) ? 'Last Epoch' : 'Just Now';
+//             dump += '<tr><td>Updated</td><td class="right">' + age + '</td></tr>';
+//         }
+//         let table = document.createElement('table');
+//         table.className = "dbtable";
+//         table.innerHTML = dump;
+//         return table;
+//     }
     
-    function _makeChart(e, width) {
-        if (e.cat || (0<=e.prec)) {
-            const col = COL_HERO;
-            const bkg = toRGBa(col, 0.5);
-            const spec =  {
-                type: 'line',
-                data: { 
-                    xLabels: e.timebase, yLabels: e.cat,
-                    datasets: [{ 
-                        label: e.name, 
-                        data: e.carray, 
-                        showLine: (0<=e.prec),
-                        backgroundColor: bkg, 
-                        borderColor: col, 
-                        lineTension:0, 
-                        fill: false, 
-                    }] 
-                },
-                options: { 
-                    layout: { padding: { left: 0, right: 0 } },
-                    maintainAspectRatio: false, 
-                    plugins: { tooltip: { callbacks: { title: _toolTipTitle, afterLabel: _toolTipText }, }, },
-                    scales: { 
-                        y: { 
-                            ticks: { maxTicksLimit:(e.cat ? e.cat.length : 7), font:{ size:10 }, autoSkip:!e.cat, maxRotation:0, autoSkipPadding:10, },
-                            //title: { text: e.unit, display: true, }, 
-                            type:((0<=e.prec)?'linear':'category'),
-                            stepSize:((e.cat) ? 1 : undefined), 
-                        },
-                        x: { 
-                            ticks: { maxTicksLimit:6, maxRotation:0, font:{ size:10 } },
-                            //title: { text: 'Time', display: true, }
-                        }, 
-                    }, 
-                }
-            };
-            let canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = width;
-            canvas.height = (0<=e.prec) ? '230px' : '150px';
-            e.chart = new Chart(ctx, spec);
-            let div = document.createElement('div');
-            div.className = 'dbchart';
-            div.style.height = (0<=e.prec) ? '230px' : '150px';
-            div.style.width = width;
-            div.appendChild(canvas);
-            return div;
-            function _toolTipTitle(context) {
-                return context[0].dataset.label;
-            }
-            function _toolTipText(context) {
-                let val = context.raw;
-                if (e.prec) val = val.toFixed(e.prec);
-                return 'Value: ' + val + (e.unit ? ' ' + e.unit : '')  + 
-                                         ((e.map && e.map[val]) ? " " + e.map[val] : '') + '\nTime: ' + context.label;
-            }
-        }
-    }
-}
+//     function _makeChart(e, width) {
+//         if (e.cat || (0<=e.prec)) {
+//             const col = COL_HERO;
+//             const bkg = toRGBa(col, 0.5);
+//             const spec =  {
+//                 type: 'line',
+//                 data: { 
+//                     xLabels: e.timebase, yLabels: e.cat,
+//                     datasets: [{ 
+//                         label: e.name, 
+//                         data: e.carray, 
+//                         showLine: (0<=e.prec),
+//                         backgroundColor: bkg, 
+//                         borderColor: col, 
+//                         lineTension:0, 
+//                         fill: false, 
+//                     }] 
+//                 },
+//                 options: { 
+//                     layout: { padding: { left: 0, right: 0 } },
+//                     maintainAspectRatio: false, 
+//                     plugins: { tooltip: { callbacks: { title: _toolTipTitle, afterLabel: _toolTipText }, }, },
+//                     scales: { 
+//                         y: { 
+//                             ticks: { maxTicksLimit:(e.cat ? e.cat.length : 7), font:{ size:10 }, autoSkip:!e.cat, maxRotation:0, autoSkipPadding:10, },
+//                             //title: { text: e.unit, display: true, }, 
+//                             type:((0<=e.prec)?'linear':'category'),
+//                             stepSize:((e.cat) ? 1 : undefined), 
+//                         },
+//                         x: { 
+//                             ticks: { maxTicksLimit:6, maxRotation:0, font:{ size:10 } },
+//                             //title: { text: 'Time', display: true, }
+//                         }, 
+//                     }, 
+//                 }
+//             };
+//             let canvas = document.createElement('canvas');
+//             const ctx = canvas.getContext('2d');
+//             canvas.width = width;
+//             canvas.height = (0<=e.prec) ? '230px' : '150px';
+//             e.chart = new Chart(ctx, spec);
+//             let div = document.createElement('div');
+//             div.className = 'dbchart';
+//             div.style.height = (0<=e.prec) ? '230px' : '150px';
+//             div.style.width = width;
+//             div.appendChild(canvas);
+//             return div;
+//             function _toolTipTitle(context) {
+//                 return context[0].dataset.label;
+//             }
+//             function _toolTipText(context) {
+//                 let val = context.raw;
+//                 if (e.prec) val = val.toFixed(e.prec);
+//                 return 'Value: ' + val + (e.unit ? ' ' + e.unit : '')  + 
+//                                          ((e.map && e.map[val]) ? " " + e.map[val] : '') + '\nTime: ' + context.label;
+//             }
+//         }
+//     }
+// }
         
 // function dbPublish() {
 //     // now publish to the gui
