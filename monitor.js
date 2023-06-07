@@ -865,46 +865,46 @@ function dbOnPublish(el) {
         if (this.chart) this.chart.update(0);
     }
     
-//     function _onDatabaseRowClick(e) {
-//         if (this.dbEntry) {
-//             const e = this.dbEntry;
-//             if (e.el.info) {
-//                 if (e.chart) e.chart.destroy();
-//                 if (e.el.info) e.el.info.parentNode.removeChild(e.el.info); // remove me
-//                 e.el.info = undefined;
-//                 e.el.stats = undefined;
-//                 e.chart = undefined;
-//             } else {
-//                 const tr = document.createElement('tr');
-//                 tr.dbEntry  = this.dbEntry;
-//                 tr.className = 'dbrow';
-//                 tr.addEventListener('click', _onDatabaseRowClick);
-//                 // the chart
-//                 let td2 = document.createElement('td');
-//                 td2.colSpan = 2;
-//                 let div = _makeChart(e, this.parentNode.width);
-//                 if (div) {
-//                     td2.appendChild(div);
-//                 }
-//                 tr.appendChild(td2);
-//                 // the stats
-//                 let td = document.createElement('td');
-//                 td.colSpan = 1;
-//                 table = document.createElement('table');
-//                 const stats = e.stats();
-//                 if (stats) {
-//                     table = _makeTable(stats);
-//                     if (table) {
-//                         e.el.stats = table;
-//                         td.appendChild(table);
-//                     }
-//                 }
-//                 tr.appendChild(td);
-//                 // innner
-//                  e.el.info = this.parentNode.insertBefore(tr, this.nextSibling);
-//             }
-//         }
-//     }
+    function _onDatabaseRowClick(e) {
+        if (this.dbEntry) {
+            const e = this.dbEntry;
+            if (e.el.info) {
+                if (e.chart) e.chart.destroy();
+                if (e.el.info) e.el.info.parentNode.removeChild(e.el.info); // remove me
+                e.el.info = undefined;
+                e.el.stats = undefined;
+                e.chart = undefined;
+            } else {
+                const tr = document.createElement('tr');
+                tr.dbEntry  = this.dbEntry;
+                tr.className = 'dbrow';
+                tr.addEventListener('click', _onDatabaseRowClick);
+                // the chart
+                let td2 = document.createElement('td');
+                td2.colSpan = 2;
+                let div = _makeChart(e, this.parentNode.width);
+                if (div) {
+                    td2.appendChild(div);
+                }
+                tr.appendChild(td2);
+                // the stats
+                let td = document.createElement('td');
+                td.colSpan = 1;
+                table = document.createElement('table');
+                const stats = e.stats();
+                if (stats) {
+                    table = _makeTable(stats);
+                    if (table) {
+                        e.el.stats = table;
+                        td.appendChild(table);
+                    }
+                }
+                tr.appendChild(td);
+                // innner
+                 e.el.info = this.parentNode.insertBefore(tr, this.nextSibling);
+            }
+        }
+    }
     
 //     function _makeTable(stats) {
 //         let dump = '';
