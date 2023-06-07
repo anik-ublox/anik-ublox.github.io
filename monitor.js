@@ -518,294 +518,294 @@ function dbBase(opt) {
     }
 }
 
-// function dbY(opt) {
-//     dbBase.call(this, opt);
-//     // attach / extend the api
-//     this.publish = function(param) {
-//         let len = this.array.length;
-//         let clen = this.carray.length;
-//         if ((0 === len) || this.grow) {
-//             if (this.len === len)
-//                 this.array.shift();
-//             else len ++;
-//             this.array.push(this.nan);
-//             this.grow = false;
+function dbY(opt) {
+    dbBase.call(this, opt);
+    // attach / extend the api
+    this.publish = function(param) {
+        let len = this.array.length;
+        let clen = this.carray.length;
+        if ((0 === len) || this.grow) {
+            if (this.len === len)
+                this.array.shift();
+            else len ++;
+            this.array.push(this.nan);
+            this.grow = false;
             
-//             if (CHART_POINTS === clen)
-//                 this.carray.shift();
-//             else clen ++;
-//             this.carray.push(this.nan);
-//         }
-//         if (this.dirty) {
-//             this.array[len-1] = this.sta ? this.val : this.nan;
-//             this.carray[clen-1] = this.sta ? this.val : this.nan;
-//             this.onpublish(param);
-//             this.dirty = false;
-//         }
-//     }
-//     this.update = function() {
-//         this.calc();
-//         this.grow = true;
-//         this.dirty = true;
-//     }
-//     this.store = function(sta, val) {
-//         this.dirty = true;
-//         this.val = val;
-//         this.sta = sta;
-//     }
-// }
+            if (CHART_POINTS === clen)
+                this.carray.shift();
+            else clen ++;
+            this.carray.push(this.nan);
+        }
+        if (this.dirty) {
+            this.array[len-1] = this.sta ? this.val : this.nan;
+            this.carray[clen-1] = this.sta ? this.val : this.nan;
+            this.onpublish(param);
+            this.dirty = false;
+        }
+    }
+    this.update = function() {
+        this.calc();
+        this.grow = true;
+        this.dirty = true;
+    }
+    this.store = function(sta, val) {
+        this.dirty = true;
+        this.val = val;
+        this.sta = sta;
+    }
+}
 
-// function dbTY(opt) {
-//     dbBase.call(this, opt);
-//     // attach / extend the api
-//     this.store = function (sta, val) {
-//         if (sta) {
-//             let ttag = new Date;
-//             this.ttag = ttag;
-//             this.val = val;
-//             this.sta = sta;
-//             if (this.len === this.array.length)
-//                 this.array.shift();
-//             this.array.push( [ttag, val] );
-//             if (CHART_POINTS === this.carray.length)
-//                 this.carray.shift();
-//             this.carray.push( [ttag, val] );
-//             this.onpublish();
-//             this.calc();
-//         }
-//     }
-// }
+function dbTY(opt) {
+    dbBase.call(this, opt);
+    // attach / extend the api
+    this.store = function (sta, val) {
+        if (sta) {
+            let ttag = new Date;
+            this.ttag = ttag;
+            this.val = val;
+            this.sta = sta;
+            if (this.len === this.array.length)
+                this.array.shift();
+            this.array.push( [ttag, val] );
+            if (CHART_POINTS === this.carray.length)
+                this.carray.shift();
+            this.carray.push( [ttag, val] );
+            this.onpublish();
+            this.calc();
+        }
+    }
+}
 
-// function formatDate(ttag) {
-//     return [1900+ttag.getYear(), _pad(1+ttag.getMonth(),2), _pad(ttag.getDate(),2)].join('-') + ' ' +
-//            [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
-//            _pad(ttag.getMilliseconds(),3);
-//     function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
-// }
+function formatDate(ttag) {
+    return [1900+ttag.getYear(), _pad(1+ttag.getMonth(),2), _pad(ttag.getDate(),2)].join('-') + ' ' +
+           [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
+           _pad(ttag.getMilliseconds(),3);
+    function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
+}
 
-// function formatTime(ttag) {
-//     return [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
-//            _pad(ttag.getMilliseconds(),3);
-//     function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
-// }
+function formatTime(ttag) {
+    return [_pad(ttag.getHours(),2), _pad(ttag.getMinutes(),2), _pad(ttag.getSeconds(),2)].join(':') + '.' +
+           _pad(ttag.getMilliseconds(),3);
+    function _pad(v,l) { return ('0000'+v.toString()).slice(-l); }
+}
 
-// function dbInit(){
-// 	let el = document.getElementById('db_clear');
-// 	if (el) el.addEventListener('click', dbClear);
-// 	el = document.getElementById('db_save');
-// 	if (el) el.addEventListener('click', dbSave);
-// 	el = document.getElementById('db_kml');
-//     if (el) el.addEventListener('click', dbSaveKml);
-//     for (let name in db) {
-//         db[name].timebase = db.time.carray;
-//         if (db[name].hide !== true) {
-//             db[name].onpublish = dbOnPublish;
-//         }
-//         db[name].onclear = dbOnClear;
-//     }
-//     for (let name in dbInt) {
-//         dbInt[name].timebase = dbInt.time.carray;
-//         if (dbInt[name].hide !== true) {
-//             dbInt[name].onpublish = dbOnPublish
-//         } 
-//         dbInt[name].onclear = dbOnClear;
-//     }
-//     setInterval( function _oneSecondInterval() {
-//         // a one second maintainance timer
-//         let date = new Date();
-//         dbInt.time.set(formatTime(date));
-//         if (USTART.timeConnected !== undefined) {
-//             let diff = date - USTART.timeConnected;
-//             diff += date.getTimezoneOffset() * 60000;
-//             diff = new Date(diff);
-//             dbInt.uptime.set(formatTime(diff));
-//         }
-//         dbInt.bytesTx.set(intStats.bytesTx);
-//         dbInt.msgTx.set(intStats.msgTx);
-//         dbInt.bytesRx.set(intStats.bytesRx + intStats.bytesPend);
-//         dbInt.msgRx.set(intStats.msgRx);
-//         intStats.bytesTx = 0;
-//         intStats.bytesRx = 0;
-//         intStats.msgTx = 0;
-//         intStats.msgRx = 0;
-//         intStats.bytesPend = 0;
+function dbInit(){
+	let el = document.getElementById('db_clear');
+	if (el) el.addEventListener('click', dbClear);
+	el = document.getElementById('db_save');
+	if (el) el.addEventListener('click', dbSave);
+	el = document.getElementById('db_kml');
+    if (el) el.addEventListener('click', dbSaveKml);
+    for (let name in db) {
+        db[name].timebase = db.time.carray;
+        if (db[name].hide !== true) {
+            db[name].onpublish = dbOnPublish;
+        }
+        db[name].onclear = dbOnClear;
+    }
+    for (let name in dbInt) {
+        dbInt[name].timebase = dbInt.time.carray;
+        if (dbInt[name].hide !== true) {
+            dbInt[name].onpublish = dbOnPublish
+        } 
+        dbInt[name].onclear = dbOnClear;
+    }
+    setInterval( function _oneSecondInterval() {
+        // a one second maintainance timer
+        let date = new Date();
+        dbInt.time.set(formatTime(date));
+        if (USTART.timeConnected !== undefined) {
+            let diff = date - USTART.timeConnected;
+            diff += date.getTimezoneOffset() * 60000;
+            diff = new Date(diff);
+            dbInt.uptime.set(formatTime(diff));
+        }
+        dbInt.bytesTx.set(intStats.bytesTx);
+        dbInt.msgTx.set(intStats.msgTx);
+        dbInt.bytesRx.set(intStats.bytesRx + intStats.bytesPend);
+        dbInt.msgRx.set(intStats.msgRx);
+        intStats.bytesTx = 0;
+        intStats.bytesRx = 0;
+        intStats.msgTx = 0;
+        intStats.msgRx = 0;
+        intStats.bytesPend = 0;
         
-//         let el = document.getElementById('dbInt');
-//         for (let name in dbInt) {
-//             const e = dbInt[name];
-//             e.publish(el)
-//             if (e.el) el = e.el.info ? e.el.info : e.el.row;
-//         }
-//         for (let name in dbInt) {
-//             dbInt[name].update(el)
-//         }
-//     }, 1000);
-// }
+        let el = document.getElementById('dbInt');
+        for (let name in dbInt) {
+            const e = dbInt[name];
+            e.publish(el)
+            if (e.el) el = e.el.info ? e.el.info : e.el.row;
+        }
+        for (let name in dbInt) {
+            dbInt[name].update(el)
+        }
+    }, 1000);
+}
 
-// function dbSave(e) {
-// 	e.preventDefault();
-//     const sep = (Array.toLocaleString) ? ['a','b'].toLocaleString().charAt(1) : ';';
-// 	let text = '';
-// 	let cols = { };
-//     let len = 0;
-//     for (let name in db) {
-//         const e = db[name];
-// 		if (e.sta | e.cnt) {
-//             const values = e.values();
-//             len = Math.max(len, values.length);
-// 			let object = { id:name, name:e.name, unit:e.unit };
-//             cols[name] = Object.assign( object, e.stats(), values );
-//         }
-//     }
-// 	function _row(item) {
-// 		let line = item;
-// 		for (let name in cols) {
-// 			line += sep + ((undefined !== cols[name][item]) ? cols[name][item] : '');
-// 		}
-// 		line += '\r\n';
-// 		return line;
-// 	}
-// 	text += _row('name');
-// 	text += _row('id');
-// 	text += _row('unit');
-// 	text += _row('sta');
-// 	text += _row('cnt');
-// 	text += _row('cur');
-// 	text += _row('min');
-// 	text += _row('max');
-// 	text += _row('avg');
-// 	text += _row('dev');
-// 	for (let r = 0; r < len; r ++) {
-// 		text += _row(r);
-// 	}
-// 	const blob = new Blob( [ text ], {type:'text/plain'});
-// 	const link = window.URL.createObjectURL(blob);
-// 	const tempLink = document.createElement('a');
-// 	tempLink.download  = 'Exported.csv';
-// 	tempLink.innerHTML = 'Download CSV File';
-// 	tempLink.href      = link;
-// 	tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
-// 	tempLink.setAttribute('hidden','');
-// 	document.body.appendChild(tempLink);
-// 	tempLink.click();
-// }
+function dbSave(e) {
+	e.preventDefault();
+    const sep = (Array.toLocaleString) ? ['a','b'].toLocaleString().charAt(1) : ';';
+	let text = '';
+	let cols = { };
+    let len = 0;
+    for (let name in db) {
+        const e = db[name];
+		if (e.sta | e.cnt) {
+            const values = e.values();
+            len = Math.max(len, values.length);
+			let object = { id:name, name:e.name, unit:e.unit };
+            cols[name] = Object.assign( object, e.stats(), values );
+        }
+    }
+	function _row(item) {
+		let line = item;
+		for (let name in cols) {
+			line += sep + ((undefined !== cols[name][item]) ? cols[name][item] : '');
+		}
+		line += '\r\n';
+		return line;
+	}
+	text += _row('name');
+	text += _row('id');
+	text += _row('unit');
+	text += _row('sta');
+	text += _row('cnt');
+	text += _row('cur');
+	text += _row('min');
+	text += _row('max');
+	text += _row('avg');
+	text += _row('dev');
+	for (let r = 0; r < len; r ++) {
+		text += _row(r);
+	}
+	const blob = new Blob( [ text ], {type:'text/plain'});
+	const link = window.URL.createObjectURL(blob);
+	const tempLink = document.createElement('a');
+	tempLink.download  = 'Exported.csv';
+	tempLink.innerHTML = 'Download CSV File';
+	tempLink.href      = link;
+	tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
+	tempLink.setAttribute('hidden','');
+	document.body.appendChild(tempLink);
+	tempLink.click();
+}
 
-// function dbSaveKml(e) {
-//     const coords = [];
-//     const coordsto = [];
-//     for (let r = 0; r < db.time.array.length; r ++) {
-// 		const lon = db.long.array[r];
-// 		const lat = db.lat.array[r];
-// 		const msl = db.msl.array[r];
-// 		if (!isNaN(lon) && !isNaN(lat) && !isNaN(msl)) {
-// 			coords.push( [ lon, lat, msl ].join() );
-// 			const vE = !isNaN(db.velE.array[r]) ? db.velE.array[r] : 0;
-// 			const vN = !isNaN(db.velN.array[r]) ? db.velN.array[r] : 0;
-// 			const vD = !isNaN(db.velD.array[r]) ? db.velD.array[r] : 0;
-// 			coordsto.push( [ lon + vE / (111199.0 * Math.cos(lat * Math.PI / 180.0)), 
-// 							 lat + vN /  111199.0, msl - vD].join() );
-// 		}
-// 	}
-// 	//             aabbggrr
-// 	const col   = 'ff596eff';
-// 	const collt = 'cc596eff';
-//     let kml = '\
-// <?xml version="1.0" encoding="UTF-8"?>\r\n\
-// <kml xmlns="http://www.opengis.net/kml/2.2">\r\n\
-// <Document>\r\n\
-// 	<name>GNSS Log</name>\r\n\
-// 	<description>Created with ' + window.location.origin + '</description>\r\n\
-// 	<open>1</open>\r\n\
-// 	<StyleMap id="style">\r\n\
-// 		<Pair>\r\n\
-// 			<key>normal</key>\r\n\
-// 			<Style>\r\n\
-// 				<IconStyle>\r\n\
-// 					<color>'+col+'</color>\r\n\
-// 					<scale>0.21</scale>\r\n\
-// 					<Icon>\r\n\
-// 						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
-// 					</Icon>\r\n\
-// 					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
-// 				</IconStyle>\r\n\
-// 				<LabelStyle>\r\n\
-// 					<scale>0</scale>\r\n\
-// 				</LabelStyle>\r\n\
-// 			</Style>\r\n\
-// 		</Pair>\r\n\
-// 		<Pair>\r\n\
-// 			<key>highlight</key>\r\n\
-// 			<Style>\r\n\
-// 				<IconStyle>\r\n\
-// 					<color>'+col+'</color>\r\n\
-// 					<scale>0.3</scale>\r\n\
-// 					<Icon>\r\n\
-// 						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
-// 					</Icon>\r\n\
-// 					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
-// 				</IconStyle>\r\n\
-// 			</Style>\r\n\
-// 		</Pair>\r\n\
-// 	</StyleMap>\r\n\
-// 	<Folder>\r\n\
-// 		<name>Positions</name>\r\n';
-// 	for (let i = 0; i < coords.length; i ++) {
-// 		kml += '\
-// 		<Placemark>\r\n\
-// 			<name>Index '+i+'</name>\r\n\
-// 			<description>Description '+i+'\r\n'+coords[i]+'</description>\r\n\
-// 			<styleUrl>#style</styleUrl>\r\n\
-// 			<Point>\r\n\
-// 				<coordinates>'+coords[i]+'</coordinates>\r\n\
-// 			</Point>\r\n\
-// 		</Placemark>\r\n';
-// 	}
-// 	kml += '\
-// 	</Folder>\r\n\
-// 	<Placemark>\r\n\
-// 		<name>Track</name>\r\n\
-// 		<Style>\r\n\
-// 			<LineStyle>\r\n\
-// 				<color>'+col+'</color>\r\n\
-// 				<width>1</width>\r\n\
-// 			</LineStyle>\r\n\
-// 		</Style>\r\n\
-// 		<LineString>\r\n\
-// 			<coordinates>' + coords.join(' ') + '</coordinates>\r\n\
-// 		</LineString>\r\n\
-// 	</Placemark>\r\n';
-// 	kml += '\
-// 	<Placemark>\r\n\
-// 		<name>Speed Vectors</name>\r\n\
-// 		<Style>\r\n\
-// 			<LineStyle>\r\n\
-// 				<color>'+collt+'</color>\r\n\
-// 				<width>3</width>\r\n\
-// 			</LineStyle>\r\n\
-// 		</Style>\r\n\
-// 		<MultiGeometry>\r\n';
-// 	for (let i = 0; i < coords.length; i ++) {
-// 		kml += '\
-// 			<LineString>\r\n\
-// 				<coordinates>' + coords[i] + ' ' + coordsto[i] + '</coordinates>\r\n\
-// 			</LineString>\r\n';
-// 	}	
-// 	kml += '\
-// 		</MultiGeometry>\r\n\
-// 	</Placemark>\r\n\
-// </Document>\r\n\
-// </kml>';
-//     const blob = new Blob( [ kml ], {type:'application/vnd.google-earth.kml+xml'});
-//     const link = window.URL.createObjectURL(blob);
-//     const tempLink = document.createElement('a');
-//     tempLink.download  = 'Exported.kml';
-//     tempLink.innerHTML = 'Download KML File';
-//     tempLink.href      = link;
-//     tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
-//     tempLink.setAttribute('hidden','');
-//     document.body.appendChild(tempLink);
-//     tempLink.click();
-// }
+function dbSaveKml(e) {
+    const coords = [];
+    const coordsto = [];
+    for (let r = 0; r < db.time.array.length; r ++) {
+		const lon = db.long.array[r];
+		const lat = db.lat.array[r];
+		const msl = db.msl.array[r];
+		if (!isNaN(lon) && !isNaN(lat) && !isNaN(msl)) {
+			coords.push( [ lon, lat, msl ].join() );
+			const vE = !isNaN(db.velE.array[r]) ? db.velE.array[r] : 0;
+			const vN = !isNaN(db.velN.array[r]) ? db.velN.array[r] : 0;
+			const vD = !isNaN(db.velD.array[r]) ? db.velD.array[r] : 0;
+			coordsto.push( [ lon + vE / (111199.0 * Math.cos(lat * Math.PI / 180.0)), 
+							 lat + vN /  111199.0, msl - vD].join() );
+		}
+	}
+	//             aabbggrr
+	const col   = 'ff596eff';
+	const collt = 'cc596eff';
+    let kml = '\
+<?xml version="1.0" encoding="UTF-8"?>\r\n\
+<kml xmlns="http://www.opengis.net/kml/2.2">\r\n\
+<Document>\r\n\
+	<name>GNSS Log</name>\r\n\
+	<description>Created with ' + window.location.origin + '</description>\r\n\
+	<open>1</open>\r\n\
+	<StyleMap id="style">\r\n\
+		<Pair>\r\n\
+			<key>normal</key>\r\n\
+			<Style>\r\n\
+				<IconStyle>\r\n\
+					<color>'+col+'</color>\r\n\
+					<scale>0.21</scale>\r\n\
+					<Icon>\r\n\
+						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
+					</Icon>\r\n\
+					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
+				</IconStyle>\r\n\
+				<LabelStyle>\r\n\
+					<scale>0</scale>\r\n\
+				</LabelStyle>\r\n\
+			</Style>\r\n\
+		</Pair>\r\n\
+		<Pair>\r\n\
+			<key>highlight</key>\r\n\
+			<Style>\r\n\
+				<IconStyle>\r\n\
+					<color>'+col+'</color>\r\n\
+					<scale>0.3</scale>\r\n\
+					<Icon>\r\n\
+						<href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>\r\n\
+					</Icon>\r\n\
+					<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\r\n\
+				</IconStyle>\r\n\
+			</Style>\r\n\
+		</Pair>\r\n\
+	</StyleMap>\r\n\
+	<Folder>\r\n\
+		<name>Positions</name>\r\n';
+	for (let i = 0; i < coords.length; i ++) {
+		kml += '\
+		<Placemark>\r\n\
+			<name>Index '+i+'</name>\r\n\
+			<description>Description '+i+'\r\n'+coords[i]+'</description>\r\n\
+			<styleUrl>#style</styleUrl>\r\n\
+			<Point>\r\n\
+				<coordinates>'+coords[i]+'</coordinates>\r\n\
+			</Point>\r\n\
+		</Placemark>\r\n';
+	}
+	kml += '\
+	</Folder>\r\n\
+	<Placemark>\r\n\
+		<name>Track</name>\r\n\
+		<Style>\r\n\
+			<LineStyle>\r\n\
+				<color>'+col+'</color>\r\n\
+				<width>1</width>\r\n\
+			</LineStyle>\r\n\
+		</Style>\r\n\
+		<LineString>\r\n\
+			<coordinates>' + coords.join(' ') + '</coordinates>\r\n\
+		</LineString>\r\n\
+	</Placemark>\r\n';
+	kml += '\
+	<Placemark>\r\n\
+		<name>Speed Vectors</name>\r\n\
+		<Style>\r\n\
+			<LineStyle>\r\n\
+				<color>'+collt+'</color>\r\n\
+				<width>3</width>\r\n\
+			</LineStyle>\r\n\
+		</Style>\r\n\
+		<MultiGeometry>\r\n';
+	for (let i = 0; i < coords.length; i ++) {
+		kml += '\
+			<LineString>\r\n\
+				<coordinates>' + coords[i] + ' ' + coordsto[i] + '</coordinates>\r\n\
+			</LineString>\r\n';
+	}	
+	kml += '\
+		</MultiGeometry>\r\n\
+	</Placemark>\r\n\
+</Document>\r\n\
+</kml>';
+    const blob = new Blob( [ kml ], {type:'application/vnd.google-earth.kml+xml'});
+    const link = window.URL.createObjectURL(blob);
+    const tempLink = document.createElement('a');
+    tempLink.download  = 'Exported.kml';
+    tempLink.innerHTML = 'Download KML File';
+    tempLink.href      = link;
+    tempLink.onclick   = function (e) { document.body.removeChild(e.target); };
+    tempLink.setAttribute('hidden','');
+    document.body.appendChild(tempLink);
+    tempLink.click();
+}
 
 // function dbClear(e) {
 //     if (e) e.preventDefault();
