@@ -935,65 +935,65 @@ function dbOnPublish(el) {
 //         return table;
 //     }
     
-//     function _makeChart(e, width) {
-//         if (e.cat || (0<=e.prec)) {
-//             const col = COL_HERO;
-//             const bkg = toRGBa(col, 0.5);
-//             const spec =  {
-//                 type: 'line',
-//                 data: { 
-//                     xLabels: e.timebase, yLabels: e.cat,
-//                     datasets: [{ 
-//                         label: e.name, 
-//                         data: e.carray, 
-//                         showLine: (0<=e.prec),
-//                         backgroundColor: bkg, 
-//                         borderColor: col, 
-//                         lineTension:0, 
-//                         fill: false, 
-//                     }] 
-//                 },
-//                 options: { 
-//                     layout: { padding: { left: 0, right: 0 } },
-//                     maintainAspectRatio: false, 
-//                     plugins: { tooltip: { callbacks: { title: _toolTipTitle, afterLabel: _toolTipText }, }, },
-//                     scales: { 
-//                         y: { 
-//                             ticks: { maxTicksLimit:(e.cat ? e.cat.length : 7), font:{ size:10 }, autoSkip:!e.cat, maxRotation:0, autoSkipPadding:10, },
-//                             //title: { text: e.unit, display: true, }, 
-//                             type:((0<=e.prec)?'linear':'category'),
-//                             stepSize:((e.cat) ? 1 : undefined), 
-//                         },
-//                         x: { 
-//                             ticks: { maxTicksLimit:6, maxRotation:0, font:{ size:10 } },
-//                             //title: { text: 'Time', display: true, }
-//                         }, 
-//                     }, 
-//                 }
-//             };
-//             let canvas = document.createElement('canvas');
-//             const ctx = canvas.getContext('2d');
-//             canvas.width = width;
-//             canvas.height = (0<=e.prec) ? '230px' : '150px';
-//             e.chart = new Chart(ctx, spec);
-//             let div = document.createElement('div');
-//             div.className = 'dbchart';
-//             div.style.height = (0<=e.prec) ? '230px' : '150px';
-//             div.style.width = width;
-//             div.appendChild(canvas);
-//             return div;
-//             function _toolTipTitle(context) {
-//                 return context[0].dataset.label;
-//             }
-//             function _toolTipText(context) {
-//                 let val = context.raw;
-//                 if (e.prec) val = val.toFixed(e.prec);
-//                 return 'Value: ' + val + (e.unit ? ' ' + e.unit : '')  + 
-//                                          ((e.map && e.map[val]) ? " " + e.map[val] : '') + '\nTime: ' + context.label;
-//             }
-//         }
-//     }
-// }
+    function _makeChart(e, width) {
+        if (e.cat || (0<=e.prec)) {
+            const col = COL_HERO;
+            const bkg = toRGBa(col, 0.5);
+            const spec =  {
+                type: 'line',
+                data: { 
+                    xLabels: e.timebase, yLabels: e.cat,
+                    datasets: [{ 
+                        label: e.name, 
+                        data: e.carray, 
+                        showLine: (0<=e.prec),
+                        backgroundColor: bkg, 
+                        borderColor: col, 
+                        lineTension:0, 
+                        fill: false, 
+                    }] 
+                },
+                options: { 
+                    layout: { padding: { left: 0, right: 0 } },
+                    maintainAspectRatio: false, 
+                    plugins: { tooltip: { callbacks: { title: _toolTipTitle, afterLabel: _toolTipText }, }, },
+                    scales: { 
+                        y: { 
+                            ticks: { maxTicksLimit:(e.cat ? e.cat.length : 7), font:{ size:10 }, autoSkip:!e.cat, maxRotation:0, autoSkipPadding:10, },
+                            //title: { text: e.unit, display: true, }, 
+                            type:((0<=e.prec)?'linear':'category'),
+                            stepSize:((e.cat) ? 1 : undefined), 
+                        },
+                        x: { 
+                            ticks: { maxTicksLimit:6, maxRotation:0, font:{ size:10 } },
+                            //title: { text: 'Time', display: true, }
+                        }, 
+                    }, 
+                }
+            };
+            let canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = (0<=e.prec) ? '230px' : '150px';
+            e.chart = new Chart(ctx, spec);
+            let div = document.createElement('div');
+            div.className = 'dbchart';
+            div.style.height = (0<=e.prec) ? '230px' : '150px';
+            div.style.width = width;
+            div.appendChild(canvas);
+            return div;
+            function _toolTipTitle(context) {
+                return context[0].dataset.label;
+            }
+            function _toolTipText(context) {
+                let val = context.raw;
+                if (e.prec) val = val.toFixed(e.prec);
+                return 'Value: ' + val + (e.unit ? ' ' + e.unit : '')  + 
+                                         ((e.map && e.map[val]) ? " " + e.map[val] : '') + '\nTime: ' + context.label;
+            }
+        }
+    }
+}
         
 function dbPublish() {
     // now publish to the gui
