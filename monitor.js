@@ -820,50 +820,50 @@ function dbClear(e) {
     clearMapTrack(e);
 }
 
-// function dbOnClear() {
-//     // detach the gui
-//     if (this.chart) {
-//         this.chart.destroy();
-//         this.chart = undefined;
-//     }
-//     if (this.el) {
-//         if (this.el.row) this.el.row.parentNode.removeChild(this.el.row);
-//         if (this.el.info) this.el.info.parentNode.removeChild(this.el.info);
-//         this.el = undefined;
-//     }
-// }
-// function dbOnPublish(el) {
-//     if (this.sta | this.cnt) {
-//         if (undefined === this.el) {
-//             let tr = document.createElement('tr');
-//             let td = document.createElement('td');
-//             td.textContent = this.name;
-//             if (this.descr) td.title = this.descr;
-//             td.style.whiteSpace = 'nowrap';
-//             tr.appendChild(td);
-//             td = document.createElement('td');
-//             td.className = 'right';
-//             const hint = this.hint();
-//             if (hint) td.title = hint;
-//             this.el = { row: tr, value:td };
-//             tr.appendChild(td);
-//             td = document.createElement('td');
-//             if (this.unit) td.textContent = this.unit;
-//             if (this.map) this.el.comment = td;
-//             tr.appendChild(td);
-//             tr.dbEntry = this;
-//             tr.removeAttribute('hidden');
-//             tr.addEventListener('click', _onDatabaseRowClick);
-//             el.parentNode.insertBefore(tr, el.nextSibling);     // only ok if we dont have a child open
-//         }
-//         if (this.el.value)   this.el.value.textContent = this.value();
-//         if (this.el.comment) this.el.comment.textContent = this.comment();
-//         if (this.el.stats) { // we have a details view open
-//             let el = _makeTable(this.stats());
-//             if (el) this.el.stats.innerHTML = el.innerHTML;
-//         }
-//         if (this.chart) this.chart.update(0);
-//     }
+function dbOnClear() {
+    // detach the gui
+    if (this.chart) {
+        this.chart.destroy();
+        this.chart = undefined;
+    }
+    if (this.el) {
+        if (this.el.row) this.el.row.parentNode.removeChild(this.el.row);
+        if (this.el.info) this.el.info.parentNode.removeChild(this.el.info);
+        this.el = undefined;
+    }
+}
+function dbOnPublish(el) {
+    if (this.sta | this.cnt) {
+        if (undefined === this.el) {
+            let tr = document.createElement('tr');
+            let td = document.createElement('td');
+            td.textContent = this.name;
+            if (this.descr) td.title = this.descr;
+            td.style.whiteSpace = 'nowrap';
+            tr.appendChild(td);
+            td = document.createElement('td');
+            td.className = 'right';
+            const hint = this.hint();
+            if (hint) td.title = hint;
+            this.el = { row: tr, value:td };
+            tr.appendChild(td);
+            td = document.createElement('td');
+            if (this.unit) td.textContent = this.unit;
+            if (this.map) this.el.comment = td;
+            tr.appendChild(td);
+            tr.dbEntry = this;
+            tr.removeAttribute('hidden');
+            tr.addEventListener('click', _onDatabaseRowClick);
+            el.parentNode.insertBefore(tr, el.nextSibling);     // only ok if we dont have a child open
+        }
+        if (this.el.value)   this.el.value.textContent = this.value();
+        if (this.el.comment) this.el.comment.textContent = this.comment();
+        if (this.el.stats) { // we have a details view open
+            let el = _makeTable(this.stats());
+            if (el) this.el.stats.innerHTML = el.innerHTML;
+        }
+        if (this.chart) this.chart.update(0);
+    }
     
 //     function _onDatabaseRowClick(e) {
 //         if (this.dbEntry) {
