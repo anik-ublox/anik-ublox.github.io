@@ -1418,13 +1418,13 @@ function tableEntry(entry, val, html) {
 		else 
 			table[entry].textContent = val;
 		table[entry].parentNode.removeAttribute('hidden');
-		if (entry == 'dev_typenum') {
+		if (entry == 'dev_typenum' && false) {
 			// SHO: add the script tile for some NINA-B3
 			if (val.match(/^NINA-B31\d-20B/)) {
 				let el = document.getElementById('tile_script');
 				if (el) el.removeAttribute('hidden');
 			}
-		} else if (entry == 'dev_mod' /* THIS CODE IS DISABLED */ && false) {
+		} else if (/* entry == 'dev_mod' /* THIS CODE IS DISABLED */  true) {
 			let query = val;
 			let p = val.indexOf('-');
 			let c = val.length;
