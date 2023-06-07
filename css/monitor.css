@@ -398,7 +398,7 @@ td dt {
     background-color: var(--hero);
 }
 #scan-range {
-    width: 13em; 
+    width: 9em; 
     font-size: 1em;
 }
 
@@ -484,8 +484,7 @@ td dt {
 }
 #scan-devices:active,
 .overlay_button:active,
-.ol-control button:active,
-.ol-control button:focus {
+.ol-control button:active {
     background-color: var(--herolt);
 	outline-color: transparent; 
     color: #fff;
@@ -533,7 +532,7 @@ svg.led_error circle {
 } 
 
 /* ---- mazgch logo ---- */
-#mazgch_logo {
+#mazgch_logo #rs {
     animation: rotation 30s infinite linear;
     transform-origin: center;
 }

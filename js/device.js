@@ -20,8 +20,8 @@
 // ------------------------------------------------------------------------------------
 const Device = (function () {
 
-const WEBSOCK_EXT    = ':8080'; // set to '/ws' 
-const WEBSOCK_REGEXP = /^Connected to (hpg-[a-z0-9]{6})/;
+const BUFFER_FORMAT  = 'timedraw';
+const LOCAL_HOST = 'localhost';
 
 // Interface
 // -----------------------------------------------------------------------------------
@@ -108,15 +108,17 @@ function atRegExp(c, m) {
 // ------------------------------------------------------------------------------------
 
 function deviceInit(ip) {
-    const matchIp = (ip !== undefined) ? ip.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d{1,5})?)(\/.+)?$/) : undefined;
     const match = document.cookie.match(/device=([^;]+)/);
 	const json = JSON.parse(((match != undefined) ? (match.length == 2) : false) ? match[1] : '{}');
     const proto = (window.location.protocol == 'https') ? 'wss://': 'ws://';
     device.status = 'disconnected';
-    if (matchIp != undefined) { // from url argument
+    if (ip !== undefined) { // from url argument
         device.name = 'unknown';
-        device.ip =         matchIp[1];
-        device.ws = proto + matchIp[1] + ((matchIp[3] !== undefined) ? matchIp[3] : WEBSOCK_EXT);
+        const m = ip.match(/^([^:]*)(:[0-9]+)?$/);
+        if (m != undefined) {
+          device.ip = ip;
+          device.ws = proto + ip + ((m[2] !== undefined) ? '/ws' : ':8080');
+        }    
     } else if (json.ip !== undefined) { // from cookie argument
         device.name = json.name;
         device.ip = json.ip;
@@ -124,12 +126,12 @@ function deviceInit(ip) {
     } else {
         device.name = 'unknown';
         device.ip = window.location.hostname;
-        device.ws = proto + device.ip + WEBSOCK_EXT;
+        device.ws = proto + device.ip + ':8080';
     }
     USTART.statusLed('error');
     USTART.tableEntry('dev_name', device.name);
     USTART.tableEntry('dev_ip', device.ip);
-    if (window.WebSocket && (device.ws !== undefined) && (device.ws != '')) {
+    if (window.WebSocket) {
         socketOpen(device.ws);
     }
     deviceStatusUpdate();
@@ -196,7 +198,7 @@ function deviceDiscovery() {
 
 let scaning = {};
 function testNet() {
-    let format = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)(\d{1,3})\s*(-\s*(\d{1,3}))?(:\d{1,5})?(\/.+)?$/;
+    let format = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)(\d{1,3})\s*(-\s*(\d{1,3}))?$/;
     let radios = document.getElementsByName("scan-ips");
     for (var i = 0, length = radios.length; i < length; i++) {
         if (radios[i].checked) {
@@ -208,27 +210,21 @@ function testNet() {
                 }
             }
             let m = value.match(format)
-            if ((m != undefined) && (m[4] !== undefined)) {
+            if ((m != undefined) && ((m.length == 3) || (m.length == 5))) {
                 let ip = m[1]
-                let from = Math.max(2, Math.min(254, Number(m[2])));
-                let to = Math.max(2, Math.min(254, Number(m[4])));
+                let from = Number(m[2]) & 0xFF
+                let to = (m.length == 5) ? Number(m[4]) & 0xFF : from
                 if (to <= from) to = from;
                 for (let i = from; i < to; i ++) {
-                    testIp(ip + i, m[5], m[6])
+                    testIp(ip + i)
                 }
             }
         }
     }
 
-    function testIp(ip,port,ext) {
+    function testIp(ip) {
         if ((scaning[ip] == undefined) || (scaning[ip] == 'found')) {
-            let url = ip + (((port !== undefined)  && (ext !== undefined)) ? port + ext :
-                             (port !== undefined)                          ? port :
-                                                      (ext !== undefined)  ? ext :
-                                                                             WEBSOCK_EXT);
-            if (port === undefined) port = '';
-            if (ext === undefined) ext = '';
-            let ws = new WebSocket((window.location.protocol == 'https') ? 'wss://' : 'ws://' + url)
+            let ws = new WebSocket((window.location.protocol == 'https') ? 'wss://' : 'ws://' + ip + ':8080')
             if (ws != undefined) {
                 scaning[ip] = 0;
                 ws.addEventListener('open',_onOpen)
@@ -251,8 +247,8 @@ function testNet() {
                     let config = '';
                     if (host != undefined) {
                         name = host;
-                        open = '<a href="' + window.location.origin + window.location.pathname + '?ip=' + ip + port + ext + '"><b>open</b></a>'
-                        config = '<a target="_blank" href="' + window.location.protocol + '//'+ ip + port + '">configure</a>'
+                        open = '<a href="' + window.location.origin + '?ip=' + ip + '"><b>open</b></a>'
+                        config = '<a target="_blank" href="' + window.location.protocol + '//'+ ip + '">configure</a>'
                     } 
                     tr.innerHTML = '<td>'+host+'</td><td>'+ip+'</td><td>' + open + '</td><td>' + config + '</td>'
                     th.parentNode.appendChild(tr);
@@ -277,7 +273,7 @@ function testNet() {
                 function _onMessage(msg) {
                     scaning[ip] ++;
                     if (typeof(msg.data) == 'string') {
-                        const m = msg.data.match(WEBSOCK_REGEXP)
+                        const m = msg.data.match(/^Connected to (hpg-[a-z0-9]{6})/)
                         if ((m != undefined) && (m.length == 2)) {
                             _report(ip, m[1])
                             _onDone();
@@ -450,7 +446,7 @@ function onSocketDisconnect(evt) {
 
 function onSocketError(evt) {
 /*REMOVE*/ //console.log('onSocketDisconnect');
-    if (device.status == 'connected') {
+    if ( device.status == 'connected') {
         Console.debug('event', 'SOCKET', (evt && evt.type) ? evt.type : 'timeout');
         device.status = 'disconnected';
         USTART.timeConnected = undefined;
@@ -473,7 +469,7 @@ function onSocketError(evt) {
         device.socket.close() // we are done
         device.socket = undefined;
     }
-    if ((device.ws !== undefined) && (device.ws != '')) {
+    if (device.ws) {
         Console.debug('event', 'SOCKET', 'reconnecting ' + device.ws);
         socketOpen(device.ws); // try to repoen 
         deviceStatusUpdate();
