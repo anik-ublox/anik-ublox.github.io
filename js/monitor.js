@@ -995,323 +995,323 @@
         // }
     }
             
-    function dbPublish() {
-        // now publish to the gui
-        if (db.long.dirty && db.lat.dirty)
-            centerMap(db.long.val, db.lat.val, db.cogt.val, db.gSpeed.val, db.hAcc.val,
-                      (db.plPosValid.val ? { major:db.plPos1.val, minor:db.plPos2.val, vert:db.plPos3.val, angle:db.plPosHorOr.val } : undefined),
-                      (db.plVelValid.val ? { major:db.plVel1.val, minor:db.plVel2.val, vert:db.plVel3.val, angle:db.plVelHorOr.val } : undefined) );
-        if (nmeaSvDb.dirty) {
-            nmeaSvDb.dirty = false;
-            // Merge the new values with the old ones avoid flickering, every epoch we will replace the old with new
-            Object.assign(oldSvDb, nmeaSvDb);
-            chartSvs(oldSvDb);
-            tableSvs(oldSvDb);
-        }
-        // show the Tiles
-        let el = document.getElementById('db');
-        for (let name in db) {
-            const e = db[name];
-            e.publish(el)
-            if (e.el) el = e.el.info ? e.el.info : e.el.row;
-        }
-        el = document.getElementById('tile_position');
-        if (el) {
-            el.removeAttribute('hidden');
-        }
-        if (nmeaSvDb.freqs > 0) {
-            el = document.getElementById('tile_satellite');
-            if (el) el.removeAttribute('hidden');
-        }
-    }
+    // function dbPublish() {
+    //     // now publish to the gui
+    //     if (db.long.dirty && db.lat.dirty)
+    //         centerMap(db.long.val, db.lat.val, db.cogt.val, db.gSpeed.val, db.hAcc.val,
+    //                   (db.plPosValid.val ? { major:db.plPos1.val, minor:db.plPos2.val, vert:db.plPos3.val, angle:db.plPosHorOr.val } : undefined),
+    //                   (db.plVelValid.val ? { major:db.plVel1.val, minor:db.plVel2.val, vert:db.plVel3.val, angle:db.plVelHorOr.val } : undefined) );
+    //     if (nmeaSvDb.dirty) {
+    //         nmeaSvDb.dirty = false;
+    //         // Merge the new values with the old ones avoid flickering, every epoch we will replace the old with new
+    //         Object.assign(oldSvDb, nmeaSvDb);
+    //         chartSvs(oldSvDb);
+    //         tableSvs(oldSvDb);
+    //     }
+    //     // show the Tiles
+    //     let el = document.getElementById('db');
+    //     for (let name in db) {
+    //         const e = db[name];
+    //         e.publish(el)
+    //         if (e.el) el = e.el.info ? e.el.info : e.el.row;
+    //     }
+    //     el = document.getElementById('tile_position');
+    //     if (el) {
+    //         el.removeAttribute('hidden');
+    //     }
+    //     if (nmeaSvDb.freqs > 0) {
+    //         el = document.getElementById('tile_satellite');
+    //         if (el) el.removeAttribute('hidden');
+    //     }
+    // }
     
-    function updateStatus( message ) {
-        // update internal counters
-        if (message.type === 'input') {
-            intStats.bytesTx += message.data.length;
-            intStats.msgTx ++;
-        }
-        if (message.type === 'output') {
-            intStats.bytesRx += message.data.length;
-            intStats.bytesPend = 0;
-            intStats.msgRx ++;
-        }
-        if (message.type === 'pending')
-            intStats.bytesPend = message.data.length;
+    // function updateStatus( message ) {
+    //     // update internal counters
+    //     if (message.type === 'input') {
+    //         intStats.bytesTx += message.data.length;
+    //         intStats.msgTx ++;
+    //     }
+    //     if (message.type === 'output') {
+    //         intStats.bytesRx += message.data.length;
+    //         intStats.bytesPend = 0;
+    //         intStats.msgRx ++;
+    //     }
+    //     if (message.type === 'pending')
+    //         intStats.bytesPend = message.data.length;
             
-        const fields = message.fields;
-        if ((message.type === 'output') && message.protocol.match(/^NMEA|UBX$/) && fields) {
-            let newEpoch = false;
-            if (db.time.sta && fields) {
-                if (undefined !== fields.time) {
-                    const oldTime = db.time.value();
-                    newEpoch = fields.time !== oldTime;
-    /*REMOVE*/      //if (newEpoch) console.log('epoch by TIME ' + oldTime + ' ' + fields.time + ' of ' + message.id);
-                } else if (undefined !== fields.itow) {
-                    let tod = (fields.itow - LEAP_SECONDS) % 86400;
-                    const h = Math.floor(tod / 3600);
-                    tod = (tod - (h * 3600));
-                    const m = Math.floor(tod / 60);
-                    const s = tod - (m * 60);
-                    const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
-                    const oldTime = db.time.value();
-                    newEpoch = time !== oldTime;
-    /*REMOVE*/      //if (newEpoch) console.log('epoch by ITOW ' + oldTime + ' ' + time + ' of ' + message.id);
-                }
-            }
-            if (!newEpoch) {
-                const id = message.id;
-                newEpoch = epoch.ids[id] && (id === 'RMC' || id === 'VTG' || id === 'GGA' || id === 'GNS');
-    /*REMOVE*/  //if (newEpoch) console.log('epoch by ' + message.id);
-            }
-            if (newEpoch) {
-                if (epoch.numMsg) 
-                    dbPublish();
-                // reset for next epoch here
-                epoch.ids = {};
-                epoch.data = '';
-                epoch.numMsg = 0;
-                epoch.index ++;
-                oldSvDb = nmeaSvDb; // take a copy 
-                nmeaSvUsed = [];
-                nmeaSvDb = { freqs:0 };
-                nmeaSvDb.dirty = true;
-                for (let name in db)
-                    db[name].update();
-            }
-            // append it to current epoch
-            epoch.data += message.data;
-            epoch.ids[message.id] = (epoch.ids[message.id]|0) + 1;
-            epoch.numMsg ++;
-            db.epIndex.set(epoch.index);
-            db.epNumMsg.set(epoch.numMsg);
-            db.epBytes.set(epoch.data.length);
-            // add the new values to the (new) epoch
-            for(let name in fields)
-                if(db[name]) db[name].set(fields[name], message);
-            // some conversions to correct units (most recent wins) set always
-            if ((undefined !== fields.longN) && (undefined !== fields.longI) && (0 === db.long.sta))
-                db.long.set((fields.longI === 'W') ? -fields.longN : fields.longN, message);
-            if ((undefined !== fields.latN) && (undefined !== fields.latI) && (0 === db.lat.sta))
-                db.lat.set((fields.latI === 'S') ? -fields.latN : fields.latN, message);
-            if (0 === db.gSpeed.sta) {
-                if (undefined !== fields.spdKm)
-                    db.gSpeed.set(0.06 * fields.spdKm. message);
-                else if (undefined !== fields.spdKn)
-                    db.gSpeed.set(0.11112 * fields.spdKn. message);
-            }
-            // complete from other fields
-            if (undefined !== fields.sep) {
-                if (undefined !== fields.msl)
-                    db.height.set(fields.msl + fields.sep, message);
-                else if (undefined !== fields.height)
-                    db.msl.set(fields.height - fields.sep, message);
-            } else if ((undefined !== fields.height) && (undefined !== fields.msl))
-                db.sep.set(fields.height - fields.msl, message);
-            if (undefined !== fields.itow) {
-                let tod = (fields.itow - 18) % 86400;
-                const h = Math.floor(tod / 3600);
-                tod = (tod - (h * 3600));
-                const m = Math.floor(tod / 60);
-                const s = tod - (m * 60);
-                const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
-                db.time.set(time, message);
-            }
-            /*
-            if ((undefined !== fields.ecefX) && (undefined !== fields.ecefY)){
-                if (0 === db.long.sta) {
-                    db.long.set(Math.atan2(fields.ecefY, fields.ecefX), message);
-                } 
-                if ((undefined !== fields.ecefZ) && (0 === db.lat.sta)){
-                    const F		= 0.00335281066474748;//(1/298.2572235630);
-                    const A		= 6378137.0;
-                    const B		= 6356752.31424518;//(A * (1-F));
-                    const E1SQR	= 0.00669437999014132;//((A*A - B*B) / (A*A));
-                    const E2SQR	= 0.00673949674227643;//((A*A - B*B) / (B*B));
-                    const E2SQR_B = 42841.31151331360000000;// E2SQR * B;
-                    const E1SQR_A = 42697.67270718000000000;// E1SQR * A;
-                    const p = Math.sqrt(fields.ecefX * fields.ecefX + fields.ecefY * fields.ecefY);
-                    const T = Math.atan2(fields.ecefZ * A, p * B);
-                    const sinT = Math.sin(T);
-                    const cosT = Math.cos(T);
-                    double dLat = Math.atan2(Z + E2SQR_B * sinT * sinT * sinT, p - E1SQR_A * cosT * cosT * cosT);
-                    db.lat.set(dLat);
-                }
-                if ((undefined !== fields.height) && (0 === db.lat.sta)){
+    //     const fields = message.fields;
+    //     if ((message.type === 'output') && message.protocol.match(/^NMEA|UBX$/) && fields) {
+    //         let newEpoch = false;
+    //         if (db.time.sta && fields) {
+    //             if (undefined !== fields.time) {
+    //                 const oldTime = db.time.value();
+    //                 newEpoch = fields.time !== oldTime;
+    // /*REMOVE*/      //if (newEpoch) console.log('epoch by TIME ' + oldTime + ' ' + fields.time + ' of ' + message.id);
+    //             } else if (undefined !== fields.itow) {
+    //                 let tod = (fields.itow - LEAP_SECONDS) % 86400;
+    //                 const h = Math.floor(tod / 3600);
+    //                 tod = (tod - (h * 3600));
+    //                 const m = Math.floor(tod / 60);
+    //                 const s = tod - (m * 60);
+    //                 const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
+    //                 const oldTime = db.time.value();
+    //                 newEpoch = time !== oldTime;
+    // /*REMOVE*/      //if (newEpoch) console.log('epoch by ITOW ' + oldTime + ' ' + time + ' of ' + message.id);
+    //             }
+    //         }
+    //         if (!newEpoch) {
+    //             const id = message.id;
+    //             newEpoch = epoch.ids[id] && (id === 'RMC' || id === 'VTG' || id === 'GGA' || id === 'GNS');
+    // /*REMOVE*/  //if (newEpoch) console.log('epoch by ' + message.id);
+    //         }
+    //         if (newEpoch) {
+    //             if (epoch.numMsg) 
+    //                 dbPublish();
+    //             // reset for next epoch here
+    //             epoch.ids = {};
+    //             epoch.data = '';
+    //             epoch.numMsg = 0;
+    //             epoch.index ++;
+    //             oldSvDb = nmeaSvDb; // take a copy 
+    //             nmeaSvUsed = [];
+    //             nmeaSvDb = { freqs:0 };
+    //             nmeaSvDb.dirty = true;
+    //             for (let name in db)
+    //                 db[name].update();
+    //         }
+    //         // append it to current epoch
+    //         epoch.data += message.data;
+    //         epoch.ids[message.id] = (epoch.ids[message.id]|0) + 1;
+    //         epoch.numMsg ++;
+    //         db.epIndex.set(epoch.index);
+    //         db.epNumMsg.set(epoch.numMsg);
+    //         db.epBytes.set(epoch.data.length);
+    //         // add the new values to the (new) epoch
+    //         for(let name in fields)
+    //             if(db[name]) db[name].set(fields[name], message);
+    //         // some conversions to correct units (most recent wins) set always
+    //         if ((undefined !== fields.longN) && (undefined !== fields.longI) && (0 === db.long.sta))
+    //             db.long.set((fields.longI === 'W') ? -fields.longN : fields.longN, message);
+    //         if ((undefined !== fields.latN) && (undefined !== fields.latI) && (0 === db.lat.sta))
+    //             db.lat.set((fields.latI === 'S') ? -fields.latN : fields.latN, message);
+    //         if (0 === db.gSpeed.sta) {
+    //             if (undefined !== fields.spdKm)
+    //                 db.gSpeed.set(0.06 * fields.spdKm. message);
+    //             else if (undefined !== fields.spdKn)
+    //                 db.gSpeed.set(0.11112 * fields.spdKn. message);
+    //         }
+    //         // complete from other fields
+    //         if (undefined !== fields.sep) {
+    //             if (undefined !== fields.msl)
+    //                 db.height.set(fields.msl + fields.sep, message);
+    //             else if (undefined !== fields.height)
+    //                 db.msl.set(fields.height - fields.sep, message);
+    //         } else if ((undefined !== fields.height) && (undefined !== fields.msl))
+    //             db.sep.set(fields.height - fields.msl, message);
+    //         if (undefined !== fields.itow) {
+    //             let tod = (fields.itow - 18) % 86400;
+    //             const h = Math.floor(tod / 3600);
+    //             tod = (tod - (h * 3600));
+    //             const m = Math.floor(tod / 60);
+    //             const s = tod - (m * 60);
+    //             const time = ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2) + ':' + ('0'+s.toFixed(3)).slice(-6);
+    //             db.time.set(time, message);
+    //         }
+    //         /*
+    //         if ((undefined !== fields.ecefX) && (undefined !== fields.ecefY)){
+    //             if (0 === db.long.sta) {
+    //                 db.long.set(Math.atan2(fields.ecefY, fields.ecefX), message);
+    //             } 
+    //             if ((undefined !== fields.ecefZ) && (0 === db.lat.sta)){
+    //                 const F		= 0.00335281066474748;//(1/298.2572235630);
+    //                 const A		= 6378137.0;
+    //                 const B		= 6356752.31424518;//(A * (1-F));
+    //                 const E1SQR	= 0.00669437999014132;//((A*A - B*B) / (A*A));
+    //                 const E2SQR	= 0.00673949674227643;//((A*A - B*B) / (B*B));
+    //                 const E2SQR_B = 42841.31151331360000000;// E2SQR * B;
+    //                 const E1SQR_A = 42697.67270718000000000;// E1SQR * A;
+    //                 const p = Math.sqrt(fields.ecefX * fields.ecefX + fields.ecefY * fields.ecefY);
+    //                 const T = Math.atan2(fields.ecefZ * A, p * B);
+    //                 const sinT = Math.sin(T);
+    //                 const cosT = Math.cos(T);
+    //                 double dLat = Math.atan2(Z + E2SQR_B * sinT * sinT * sinT, p - E1SQR_A * cosT * cosT * cosT);
+    //                 db.lat.set(dLat);
+    //             }
+    //             if ((undefined !== fields.height) && (0 === db.lat.sta)){
                     
-                }
-            }
-            */
+    //             }
+    //         }
+    //         */
                 
-    /*		// XYZ -> Lat/LOn/ALT
-            onst double Pi		= 3.1415926535898;		// WGS 84 value of pi
-    const double F		= (1/298.2572235630);
-    const double A		= 6378137.0;
-    const double B		= (A * (1-F));
-    const double E1SQR	= ((A*A - B*B) / (A*A));
-    const double E2SQR	= ((A*A - B*B) / (B*B));
+    // /*		// XYZ -> Lat/LOn/ALT
+    //         onst double Pi		= 3.1415926535898;		// WGS 84 value of pi
+    // const double F		= (1/298.2572235630);
+    // const double A		= 6378137.0;
+    // const double B		= (A * (1-F));
+    // const double E1SQR	= ((A*A - B*B) / (A*A));
+    // const double E2SQR	= ((A*A - B*B) / (B*B));
     
-    const double RADIANS_PER_DEGREE = (Pi / 180.0);							//!< Radians per degree
-    const double DEGREES_PER_RADIAN	= (180.0 / Pi);							//!< Degrees per radian
-    const double ARCSECONDS_PER_RADIAN	= (DEGREES_PER_RADIAN * 3600.0);	//!< Arc seconds per radian
-    const double RADIANS_PER_ARCSECOND = (RADIANS_PER_DEGREE / 3600);		//!< Radians per arc second
+    // const double RADIANS_PER_DEGREE = (Pi / 180.0);							//!< Radians per degree
+    // const double DEGREES_PER_RADIAN	= (180.0 / Pi);							//!< Degrees per radian
+    // const double ARCSECONDS_PER_RADIAN	= (DEGREES_PER_RADIAN * 3600.0);	//!< Arc seconds per radian
+    // const double RADIANS_PER_ARCSECOND = (RADIANS_PER_DEGREE / 3600);		//!< Radians per arc second
     
-    const double METERS_PER_NAUTICAL_MILE	= (1853.32055);
-    const double LAT_METERS_PER_DEGREE		= (METERS_PER_NAUTICAL_MILE * 60.0);
-    const double KNOTS_PER_METER			= (0.3048 * 6076.0);
+    // const double METERS_PER_NAUTICAL_MILE	= (1853.32055);
+    // const double LAT_METERS_PER_DEGREE		= (METERS_PER_NAUTICAL_MILE * 60.0);
+    // const double KNOTS_PER_METER			= (0.3048 * 6076.0);
     
-    const double C_SOL	= 299792458.0;
+    // const double C_SOL	= 299792458.0;
     
-    double X = m_pStorageX->GetValue();
+    // double X = m_pStorageX->GetValue();
             
-                // Set Altitude if needed
-                if (m_pStorageAlt && m_pStorageAlt->IsUndefined())
-                {
-                    // handle the poles
-                    if (p == 0.0)
-                        bUpdated |= m_pStorageAlt->EstValue(fabs(Z) - B);
-                    else
-                    {
-                        double sinF = sin(dLat);
-                        double cosF = cos(dLat);
-                        double N =  A*A / sqrt(A*A * cosF*cosF + B*B * sinF*sinF);
-                        bUpdated |= m_pStorageAlt->EstValue(p / cosF - N);
-                    }
-                }
+    //             // Set Altitude if needed
+    //             if (m_pStorageAlt && m_pStorageAlt->IsUndefined())
+    //             {
+    //                 // handle the poles
+    //                 if (p == 0.0)
+    //                     bUpdated |= m_pStorageAlt->EstValue(fabs(Z) - B);
+    //                 else
+    //                 {
+    //                     double sinF = sin(dLat);
+    //                     double cosF = cos(dLat);
+    //                     double N =  A*A / sqrt(A*A * cosF*cosF + B*B * sinF*sinF);
+    //                     bUpdated |= m_pStorageAlt->EstValue(p / cosF - N);
+    //                 }
+    //             }
                 
-            if (m_pStorageLat && m_pStorageLat->IsDefined() && 
-            m_pStorageAlt && m_pStorageAlt->IsDefined())
-            {
-                double dLat = m_pStorageLat->GetValue();
-                double dAlt = m_pStorageAlt->GetValue();
-                double sinF = sin(dLat);
-                double cosF = cos(dLat);
-                double N =  (A * A) / sqrt(A * A * cosF * cosF + B * B * sinF * sinF);
-                // Set Z if Needed
-                if (m_pStorageZ && m_pStorageZ->IsUndefined())
-                    bUpdated |= m_pStorageZ->EstValue(((B * B) / (A * A) * N + dAlt) * sinF);
-                if (m_pStorageLon && m_pStorageLon->IsDefined())
-                {
-                    double dLon = m_pStorageLon->GetValue();
-                    // Set X if Needed
-                    if (m_pStorageX && m_pStorageX->IsUndefined())
-                        bUpdated |= m_pStorageX->EstValue((N + dAlt) * cosF * cos(dLon));
-                    // Set Y if Needed
-                    if (m_pStorageY && m_pStorageY->IsUndefined())
-                        bUpdated |= m_pStorageY->EstValue((N + dAlt) * cosF * sin(dLon));
-                }
-            }
-            if (m_pStorageX && m_pStorageX->IsDefined() && 
-            m_pStorageY && m_pStorageY->IsDefined() && 
-            m_pStorageLong && m_pStorageLong->IsDefined())
-        {
+    //         if (m_pStorageLat && m_pStorageLat->IsDefined() && 
+    //         m_pStorageAlt && m_pStorageAlt->IsDefined())
+    //         {
+    //             double dLat = m_pStorageLat->GetValue();
+    //             double dAlt = m_pStorageAlt->GetValue();
+    //             double sinF = sin(dLat);
+    //             double cosF = cos(dLat);
+    //             double N =  (A * A) / sqrt(A * A * cosF * cosF + B * B * sinF * sinF);
+    //             // Set Z if Needed
+    //             if (m_pStorageZ && m_pStorageZ->IsUndefined())
+    //                 bUpdated |= m_pStorageZ->EstValue(((B * B) / (A * A) * N + dAlt) * sinF);
+    //             if (m_pStorageLon && m_pStorageLon->IsDefined())
+    //             {
+    //                 double dLon = m_pStorageLon->GetValue();
+    //                 // Set X if Needed
+    //                 if (m_pStorageX && m_pStorageX->IsUndefined())
+    //                     bUpdated |= m_pStorageX->EstValue((N + dAlt) * cosF * cos(dLon));
+    //                 // Set Y if Needed
+    //                 if (m_pStorageY && m_pStorageY->IsUndefined())
+    //                     bUpdated |= m_pStorageY->EstValue((N + dAlt) * cosF * sin(dLon));
+    //             }
+    //         }
+    //         if (m_pStorageX && m_pStorageX->IsDefined() && 
+    //         m_pStorageY && m_pStorageY->IsDefined() && 
+    //         m_pStorageLong && m_pStorageLong->IsDefined())
+    //     {
             
-        VXYZ -> VNED
-            double X = m_pStorageX->GetValue();
-            double Y = m_pStorageY->GetValue();
-            double Long = m_pStorageLong->GetValue();
-            double sinL = sin(Long);
-            double cosL = cos(Long);
-            if (m_pStorageEast && m_pStorageEast->IsUndefined())
-                bUpdated |= m_pStorageEast->EstValue(- X * sinL + Y * cosL);
-            if (m_pStorageZ && m_pStorageZ->IsDefined() && 
-                m_pStorageLat && m_pStorageLat->IsDefined())
-            {
-                double Z = m_pStorageZ->GetValue();
-                double Lat = m_pStorageLat->GetValue();
-                double sinF = sin(Lat);
-                double cosF = cos(Lat);
-                if (m_pStorageNorth && m_pStorageNorth->IsUndefined()) 
-                    bUpdated |= m_pStorageNorth->EstValue(- X * sinF * cosL - Y * sinF * sinL + Z * cosF);
-                if (m_pStorageDown && m_pStorageDown->IsUndefined()) 
-                    bUpdated |= m_pStorageDown->EstValue(- X * cosF * cosL - Y * cosF * sinL - Z * sinF);
-            }
-        }
+    //     VXYZ -> VNED
+    //         double X = m_pStorageX->GetValue();
+    //         double Y = m_pStorageY->GetValue();
+    //         double Long = m_pStorageLong->GetValue();
+    //         double sinL = sin(Long);
+    //         double cosL = cos(Long);
+    //         if (m_pStorageEast && m_pStorageEast->IsUndefined())
+    //             bUpdated |= m_pStorageEast->EstValue(- X * sinL + Y * cosL);
+    //         if (m_pStorageZ && m_pStorageZ->IsDefined() && 
+    //             m_pStorageLat && m_pStorageLat->IsDefined())
+    //         {
+    //             double Z = m_pStorageZ->GetValue();
+    //             double Lat = m_pStorageLat->GetValue();
+    //             double sinF = sin(Lat);
+    //             double cosF = cos(Lat);
+    //             if (m_pStorageNorth && m_pStorageNorth->IsUndefined()) 
+    //                 bUpdated |= m_pStorageNorth->EstValue(- X * sinF * cosL - Y * sinF * sinL + Z * cosF);
+    //             if (m_pStorageDown && m_pStorageDown->IsUndefined()) 
+    //                 bUpdated |= m_pStorageDown->EstValue(- X * cosF * cosL - Y * cosF * sinL - Z * sinF);
+    //         }
+    //     }
             
-        if (m_pStorageNorth && m_pStorageNorth->IsDefined() && 
-            m_pStorageDown && m_pStorageDown->IsDefined() && 
-            m_pStorageLat && m_pStorageLat->IsDefined())
-        {
-            double North = m_pStorageNorth->GetValue();
-            double Down = m_pStorageDown->GetValue();
-            double Lat = m_pStorageLat->GetValue();
-            double sinF = sin(Lat);
-            double cosF = cos(Lat);
-            if (m_pStorageZ && m_pStorageZ->IsUndefined())
-                bUpdated |= m_pStorageZ->EstValue(cosF * North - sinF * Down);
-            if (m_pStorageEast && m_pStorageEast->IsDefined() && 
-                m_pStorageLong && m_pStorageLong->IsDefined())
-            {
-                double East = m_pStorageEast->GetValue();
-                double Long = m_pStorageLong->GetValue();
-                double sinL = sin(Long);
-                double cosL = cos(Long);
-                if (m_pStorageX && m_pStorageX->IsUndefined()) 
-                    bUpdated |= m_pStorageX->EstValue(- sinL * East  - cosL * sinF * North - cosL * cosF * Down);
-                if (m_pStorageY && m_pStorageY->IsUndefined()) 
-                    bUpdated |= m_pStorageY->EstValue(cosL * East  - sinL * sinF * North - cosF * sinL * Down);
-            }
-        }
-        */
+    //     if (m_pStorageNorth && m_pStorageNorth->IsDefined() && 
+    //         m_pStorageDown && m_pStorageDown->IsDefined() && 
+    //         m_pStorageLat && m_pStorageLat->IsDefined())
+    //     {
+    //         double North = m_pStorageNorth->GetValue();
+    //         double Down = m_pStorageDown->GetValue();
+    //         double Lat = m_pStorageLat->GetValue();
+    //         double sinF = sin(Lat);
+    //         double cosF = cos(Lat);
+    //         if (m_pStorageZ && m_pStorageZ->IsUndefined())
+    //             bUpdated |= m_pStorageZ->EstValue(cosF * North - sinF * Down);
+    //         if (m_pStorageEast && m_pStorageEast->IsDefined() && 
+    //             m_pStorageLong && m_pStorageLong->IsDefined())
+    //         {
+    //             double East = m_pStorageEast->GetValue();
+    //             double Long = m_pStorageLong->GetValue();
+    //             double sinL = sin(Long);
+    //             double cosL = cos(Long);
+    //             if (m_pStorageX && m_pStorageX->IsUndefined()) 
+    //                 bUpdated |= m_pStorageX->EstValue(- sinL * East  - cosL * sinF * North - cosL * cosF * Down);
+    //             if (m_pStorageY && m_pStorageY->IsUndefined()) 
+    //                 bUpdated |= m_pStorageY->EstValue(cosL * East  - sinL * sinF * North - cosF * sinL * Down);
+    //         }
+    //     }
+    //     */
         
-            // special extractions from messages
-            if (message.protocol === 'UBX') {
-                if (message.name === 'MON-VER') {
-                    USTART.tableEntry('dev_tech', /*'\uE003'+*/
-                            '<a target="_blank" href="https://www.u-blox.com/en/positioning-chips-and-modules">Positioning</a>', true);
-                    infTextExtract(fields.swVer);
-                    tableEntry('dev_hw', fields.hwVer);
-                    if (fields.extVer) {
-                        for (let i = 0; i < fields.extVer.length; i ++)
-                            infTextExtract(fields.extVer[i]);
-                    }
-                } else if (message.name === 'INF-NOTICE') {
-                    infTextExtract(fields.infTxt);
-                } else if (message.name === 'MON-PMP') {
-                    for (let i = 0; i <fields.entries; i ++) {
-                        let freq = fields.entry[i].centerFreq;
-                        const cn0 = fields.entry[i].cn0 + fields.entry[0].cn0Frac;
-                        if (cn0 > 0) {
-                            db.lBcn0.set(cn0);
-                        }
-                        const sys = 'PointPerfect';
-                        let sig = 'LBAND';
-                        if (0 < freq) sig += ' ' + (freq*1e-6).toFixed(2);
-                        let id = gnssLut[sys].ch;
-                        const keys = Object.keys(gnssLut[sys].freq);
-                        keys.forEach( function Check(key) {
-                            if (Math.abs(freq - gnssLut[sys].freq[key]) < 100000) {
-                                id = gnssLut[sys].ch + key;
-                            }
-                        } );
-                        if (undefined !== id) {
-                            nmeaSvsSet(sys, id, sig, cn0)
-                            nmeaSvDb.dirty = true;
-                        }
-                    }   
-                } else if (message.name === 'RXM-QZSSL6') {
-                    const sys = 'QZSS';
-                    const sig = 'L6';
-                    const id = gnssLut[sys].ch + fields.svId;
-                    nmeaSvsSet(sys, id, sig, fields.cno);
-                    nmeaSvDb.dirty = true;
-                } else if (message.name === 'RXM-PMP') {
-                    if (fields.ebn0 > 0)
-                        db.lBebn0.set(fields.ebn0);
-                    nmeaSvDb.dirty = true;
-                } else if (message.name === 'RXM-COR') {
-                    if (fields.ebn0 > 0)
-                        db.lBebn0.set(fields.ebn0);
-                } 
-            } else if (message.protocol === 'NMEA') {
-                if ((message.id === 'GSA') || (message.id === 'GSV')) {
-                    nmeaSvsExtract(fields, message.talker);
-                } else if (message.id === 'TXT') {
-                    infTextExtract(fields.infTxt);
-                }
-            }
-        }
-    }
+    //         // special extractions from messages
+    //         if (message.protocol === 'UBX') {
+    //             if (message.name === 'MON-VER') {
+    //                 USTART.tableEntry('dev_tech', /*'\uE003'+*/
+    //                         '<a target="_blank" href="https://www.u-blox.com/en/positioning-chips-and-modules">Positioning</a>', true);
+    //                 infTextExtract(fields.swVer);
+    //                 tableEntry('dev_hw', fields.hwVer);
+    //                 if (fields.extVer) {
+    //                     for (let i = 0; i < fields.extVer.length; i ++)
+    //                         infTextExtract(fields.extVer[i]);
+    //                 }
+    //             } else if (message.name === 'INF-NOTICE') {
+    //                 infTextExtract(fields.infTxt);
+    //             } else if (message.name === 'MON-PMP') {
+    //                 for (let i = 0; i <fields.entries; i ++) {
+    //                     let freq = fields.entry[i].centerFreq;
+    //                     const cn0 = fields.entry[i].cn0 + fields.entry[0].cn0Frac;
+    //                     if (cn0 > 0) {
+    //                         db.lBcn0.set(cn0);
+    //                     }
+    //                     const sys = 'PointPerfect';
+    //                     let sig = 'LBAND';
+    //                     if (0 < freq) sig += ' ' + (freq*1e-6).toFixed(2);
+    //                     let id = gnssLut[sys].ch;
+    //                     const keys = Object.keys(gnssLut[sys].freq);
+    //                     keys.forEach( function Check(key) {
+    //                         if (Math.abs(freq - gnssLut[sys].freq[key]) < 100000) {
+    //                             id = gnssLut[sys].ch + key;
+    //                         }
+    //                     } );
+    //                     if (undefined !== id) {
+    //                         nmeaSvsSet(sys, id, sig, cn0)
+    //                         nmeaSvDb.dirty = true;
+    //                     }
+    //                 }   
+    //             } else if (message.name === 'RXM-QZSSL6') {
+    //                 const sys = 'QZSS';
+    //                 const sig = 'L6';
+    //                 const id = gnssLut[sys].ch + fields.svId;
+    //                 nmeaSvsSet(sys, id, sig, fields.cno);
+    //                 nmeaSvDb.dirty = true;
+    //             } else if (message.name === 'RXM-PMP') {
+    //                 if (fields.ebn0 > 0)
+    //                     db.lBebn0.set(fields.ebn0);
+    //                 nmeaSvDb.dirty = true;
+    //             } else if (message.name === 'RXM-COR') {
+    //                 if (fields.ebn0 > 0)
+    //                     db.lBebn0.set(fields.ebn0);
+    //             } 
+    //         } else if (message.protocol === 'NMEA') {
+    //             if ((message.id === 'GSA') || (message.id === 'GSV')) {
+    //                 nmeaSvsExtract(fields, message.talker);
+    //             } else if (message.id === 'TXT') {
+    //                 infTextExtract(fields.infTxt);
+    //             }
+    //         }
+    //     }
+    // }
     
     // this function can be used on UBX INF or MON-VER or NMEA TXT messages
     function infTextExtract(v) {
